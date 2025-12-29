@@ -1654,4 +1654,166 @@
         });
     }
 
+    // --- Authentication System ---
+    class SVPAuth {
+        constructor() {
+            this.token = localStorage.getItem('svp_token');
+            this.user = JSON.parse(localStorage.getItem('svp_user') || 'null');
+            this.init();
+        }
+
+        init() {
+            this.bindEvents();
+            this.checkAuth();
+            this.setupAjax();
+        }
+
+        bindEvents() {
+            // Toggle between Login and Register
+            $(document).on('click', '.svp-toggle-auth', (e) => {
+                e.preventDefault();
+                const target = $(e.currentTarget).data('target');
+                $('.svp-auth-card').hide();
+                $('#' + target).fadeIn();
+            });
+
+            // Login Form Submission
+            $('#svp-login-form').on('submit', (e) => this.handleLogin(e));
+
+            // Register Form Submission
+            $('#svp-register-form').on('submit', (e) => this.handleRegister(e));
+
+            // Logout (if we had a logout button)
+            $(document).on('click', '#svp-logout-btn', (e) => {
+                e.preventDefault();
+                this.logout();
+            });
+        }
+
+        setupAjax() {
+            // Add JWT token to all AJAX requests
+            const self = this;
+            $.ajaxSetup({
+                beforeSend: function (xhr) {
+                    if (self.token) {
+                        xhr.setRequestHeader('Authorization', 'Bearer ' + self.token);
+                    }
+                }
+            });
+        }
+
+        async handleLogin(e) {
+            e.preventDefault();
+            const form = $(e.currentTarget);
+            const btn = form.find('button[type="submit"]');
+            const msg = form.find('.svp-auth-message');
+
+            this.setLoading(btn, true);
+            msg.removeClass('error success').text('');
+
+            const data = {
+                username: form.find('input[name="username"]').val(),
+                password: form.find('input[name="password"]').val()
+            };
+
+            try {
+                const response = await $.ajax({
+                    url: svpData.restUrl + 'svp/v1/auth/login',
+                    type: 'POST',
+                    data: data,
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8' // Standard form encoding usually fine
+                });
+
+                // REST API returns direct JSON, typically
+                if (response.token) {
+                    this.loginSuccess(response);
+                    msg.addClass('success').text('Login successful! Redirecting...');
+                    setTimeout(() => window.location.href = svpData.homeUrl || '/', 1000);
+                } else {
+                    throw new Error('Invalid response');
+                }
+
+            } catch (err) {
+                const errorMsg = err.responseJSON?.message || err.responseJSON?.code || 'Login failed. Please check your credentials.';
+                msg.addClass('error').text(errorMsg);
+                this.setLoading(btn, false);
+            }
+        }
+
+        async handleRegister(e) {
+            e.preventDefault();
+            const form = $(e.currentTarget);
+            const btn = form.find('button[type="submit"]');
+            const msg = form.find('.svp-auth-message');
+
+            this.setLoading(btn, true);
+            msg.removeClass('error success').text('');
+
+            const data = {
+                username: form.find('input[name="username"]').val(),
+                email: form.find('input[name="email"]').val(),
+                password: form.find('input[name="password"]').val()
+            };
+
+            try {
+                const response = await $.ajax({
+                    url: svpData.restUrl + 'svp/v1/auth/register',
+                    type: 'POST',
+                    data: data
+                });
+
+                if (response.token) {
+                    this.loginSuccess(response);
+                    msg.addClass('success').text('Registration successful! Redirecting...');
+                    setTimeout(() => window.location.href = svpData.homeUrl || '/', 1000);
+                }
+
+            } catch (err) {
+                const errorMsg = err.responseJSON?.message || 'Registration failed.';
+                msg.addClass('error').text(errorMsg);
+                this.setLoading(btn, false);
+            }
+        }
+
+        loginSuccess(data) {
+            this.token = data.token;
+            this.user = {
+                email: data.user_email,
+                display_name: data.display_name
+            };
+            localStorage.setItem('svp_token', this.token);
+            localStorage.setItem('svp_user', JSON.stringify(this.user));
+            this.setupAjax();
+        }
+
+        logout() {
+            localStorage.removeItem('svp_token');
+            localStorage.removeItem('svp_user');
+            this.token = null;
+            this.user = null;
+            window.location.reload();
+        }
+
+        setLoading(btn, isLoading) {
+            if (isLoading) {
+                btn.prop('disabled', true).addClass('loading');
+            } else {
+                btn.prop('disabled', false).removeClass('loading');
+            }
+        }
+
+        checkAuth() {
+            // Check if token validates basically
+            if (this.token) {
+                // If on auth page, redirect to home
+                if ($('.svp-auth-container').length > 0) {
+                    window.location.href = svpData.homeUrl || '/';
+                }
+            }
+        }
+    }
+
+    // Initialize Auth
+    new SVPAuth();
+
 })(jQuery);

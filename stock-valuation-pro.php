@@ -65,6 +65,7 @@ class StockValuationPro
         add_shortcode('stock_relative', array($this, 'render_relative_valuation'));
         add_shortcode('stock_news', array($this, 'render_news'));
         add_shortcode('stock_dashboard', array($this, 'render_full_dashboard'));
+        add_shortcode('stock_auth', array($this, 'render_auth'));
 
         // AJAX handlers
         add_action('wp_ajax_svp_fetch_stock_data', array($this, 'ajax_fetch_stock_data'));
@@ -155,6 +156,7 @@ class StockValuationPro
             'nonce' => wp_create_nonce('svp_nonce'),
             'options' => $this->get_public_options(),
             'geminiApiKey' => isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '',
+            'homeUrl' => home_url(),
         ));
     }
 
@@ -623,11 +625,42 @@ class StockValuationPro
         return ob_get_clean();
     }
 
+    public function render_auth($atts)
+    {
+        if (is_user_logged_in()) {
+            return '<script>window.location.href = "' . home_url() . '";</script>';
+        }
+
+        ob_start();
+        include SVP_PLUGIN_DIR . 'templates/frontend/login.php';
+        return ob_get_clean();
+    }
+
     /**
      * Register REST API routes
      */
     public function register_rest_routes()
     {
+        // Auth Routes
+        register_rest_route('svp/v1', '/auth/login', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'rest_auth_login'),
+            'permission_callback' => '__return_true',
+        ));
+
+        register_rest_route('svp/v1', '/auth/register', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'rest_auth_register'),
+            'permission_callback' => '__return_true',
+        ));
+
+        register_rest_route('svp/v1', '/auth/me', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'rest_auth_me'),
+            'permission_callback' => array($this, 'check_api_permission'),
+        ));
+
+        // existing routes...
         register_rest_route('svp/v1', '/stock/(?P<ticker>[a-zA-Z0-9\.\-]+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'rest_get_stock_data'),
@@ -654,26 +687,150 @@ class StockValuationPro
     }
 
     /**
-     * Check API Permission
+     * REST API: Login
      */
-    public function check_api_permission()
+    public function rest_auth_login($request)
     {
-        return is_user_logged_in();
+        $username = sanitize_text_field($request['username']);
+        $password = sanitize_text_field($request['password']);
+
+        $user = wp_signon(array(
+            'user_login' => $username,
+            'user_password' => $password,
+            'remember' => true
+        ));
+
+        if (is_wp_error($user)) {
+            return new WP_Error('invalid_credentials', 'Invalid username or password', array('status' => 401));
+        }
+
+        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
+        $jwt = new SVP_JWT_Handler();
+        $token = $jwt->generate_token($user->ID);
+
+        return rest_ensure_response(array(
+            'token' => $token,
+            'user_email' => $user->user_email,
+            'display_name' => $user->display_name
+        ));
     }
 
     /**
-     * REST API callbacks
+     * REST API: Register
      */
-    public function rest_get_stock_data($request)
+    public function rest_auth_register($request)
     {
-        $ticker = strtoupper($request['ticker']);
-        $data = $this->fetch_stock_data($ticker);
+        $username = sanitize_text_field($request['username']);
+        $email = sanitize_email($request['email']);
+        $password = sanitize_text_field($request['password']);
 
-        if (is_wp_error($data)) {
-            return $data;
+        if (username_exists($username) || email_exists($email)) {
+            return new WP_Error('user_exists', 'Username or Email already exists', array('status' => 400));
         }
 
-        return rest_ensure_response($data);
+        $user_id = wp_create_user($username, $password, $email);
+
+        if (is_wp_error($user_id)) {
+            return new WP_Error('registration_failed', $user_id->get_error_message(), array('status' => 500));
+        }
+
+        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
+        $jwt = new SVP_JWT_Handler();
+        $token = $jwt->generate_token($user_id);
+        $user = get_user_by('id', $user_id);
+
+        return rest_ensure_response(array(
+            'token' => $token,
+            'user_email' => $user->user_email,
+            'display_name' => $user->display_name
+        ));
+    }
+
+    /**
+     * REST API: Get Current User
+     */
+    public function rest_auth_me($request)
+    {
+        // User ID is already validated and set in check_api_permission if we strictly used it,
+        // but here we manually re-validate to get the object or rely on permissions.
+        // Since we don't pass the ID from permission callback easily, let's re-parse.
+        // Actually, check_api_permission returns true/false.
+        // So we strictly extract token again.
+
+        $auth_header = $request->get_header('Authorization');
+        if (!$auth_header)
+            return new WP_Error('no_token', 'No token provided', array('status' => 401));
+
+        list($token) = sscanf($auth_header, 'Bearer %s');
+
+        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
+        $jwt = new SVP_JWT_Handler();
+        $user_id = $jwt->validate_token($token);
+
+        if (!$user_id) {
+            return new WP_Error('invalid_token', 'Invalid Token', array('status' => 401));
+        }
+
+        $user = get_user_by('id', $user_id);
+
+        return rest_ensure_response(array(
+            'id' => $user->ID,
+            'username' => $user->user_login,
+            'email' => $user->user_email,
+            'display_name' => $user->display_name
+        ));
+    }
+
+    /**
+     * Check API Permission (Enhanced for JWT)
+     */
+    public function check_api_permission($request)
+    {
+        // 1. Check Standard WP Cookie Auth
+        if (is_user_logged_in()) {
+            return true;
+        }
+
+        // 2. Check JWT Header
+        $auth_header = $request->get_header('Authorization');
+        if ($auth_header) {
+            list($token) = sscanf($auth_header, 'Bearer %s');
+            if ($token) {
+                require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
+                $jwt = new SVP_JWT_Handler();
+                $user_id = $jwt->validate_token($token);
+                if ($user_id) {
+                    // Optional: Set current user context for this request
+                    wp_set_current_user($user_id);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Fetch Stock Data (Yahoo Finance)
+     */
+    private function fetch_stock_data($ticker)
+    {
+        $url = "https://query1.finance.yahoo.com/v8/finance/chart/{$ticker}?interval=1d&range=5y";
+
+        $response = wp_remote_get($url, array('timeout' => 15));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (empty($data['chart']['result'])) {
+            return new WP_Error('no_data', 'No data found for ' . $ticker);
+        }
+
+        return $data;
     }
 
     public function rest_calculate_valuation($request)

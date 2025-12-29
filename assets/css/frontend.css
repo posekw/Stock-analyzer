@@ -2848,3 +2848,174 @@ main {
         padding-top: 24px !important;
     }
 }
+
+/* Authentication Styles */
+.svp-auth-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    background: radial-gradient(circle at center, rgba(39, 39, 42, 0.4) 0%, rgba(9, 9, 11, 1) 100%);
+}
+
+.svp-auth-wrapper {
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+    z-index: 10;
+}
+
+.svp-auth-card {
+    background: rgba(24, 24, 27, 0.6);
+    backdrop-filter: blur(24px);
+    border: 1px solid var(--svp-border-zinc-700);
+    border-radius: var(--svp-radius-lg);
+    padding: 40px;
+    box-shadow: var(--svp-shadow);
+    animation: svpFadeIn 0.3s ease-out;
+}
+
+@keyframes svpFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.svp-auth-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.svp-auth-header h2 {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--svp-text-white);
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+}
+
+.svp-auth-header p {
+    color: var(--svp-text-zinc-400);
+    font-size: 14px;
+}
+
+.svp-form-group {
+    margin-bottom: 20px;
+}
+
+.svp-form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--svp-text-zinc-300);
+    margin-bottom: 8px;
+}
+
+.svp-form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(9, 9, 11, 0.6);
+    border: 1px solid var(--svp-border-zinc-700);
+    border-radius: 12px;
+    color: var(--svp-text-white);
+    font-size: 15px;
+    transition: var(--svp-transition);
+}
+
+.svp-form-group input:focus {
+    border-color: var(--svp-emerald-500);
+    outline: none;
+    background: rgba(9, 9, 11, 0.8);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+}
+
+.svp-form-actions {
+    margin-top: 32px;
+    margin-bottom: 24px;
+}
+
+.svp-btn-block {
+    width: 100%;
+    justify-content: center;
+    height: 48px;
+    font-size: 15px;
+}
+
+.svp-auth-footer {
+    text-align: center;
+    font-size: 14px;
+    color: var(--svp-text-zinc-500);
+}
+
+.svp-auth-footer a {
+    color: var(--svp-emerald-400);
+    text-decoration: none;
+    font-weight: 600;
+    margin-left: 4px;
+    transition: var(--svp-transition);
+}
+
+.svp-auth-footer a:hover {
+    color: var(--svp-emerald-300);
+    text-decoration: underline;
+}
+
+.svp-auth-message {
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    text-align: center;
+    display: none;
+}
+
+.svp-auth-message.error {
+    display: block;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--svp-red-400);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.svp-auth-message.success {
+    display: block;
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--svp-green-400);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* Button Loading State */
+.svp-btn.loading {
+    position: relative;
+    color: transparent !important;
+}
+
+.svp-btn.loading .svp-btn-text {
+    opacity: 0;
+}
+
+.svp-btn.loading .svp-btn-loader {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: svpSpin 0.8s linear infinite;
+    display: block;
+}
+
+@keyframes svpSpin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
