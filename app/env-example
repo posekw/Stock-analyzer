@@ -1,2 +1,0 @@
-NEXT_PUBLIC_WORDPRESS_URL=http://localhost/wordpress
-AUTH_SECRET=changeme_run_npx_auth_secret
