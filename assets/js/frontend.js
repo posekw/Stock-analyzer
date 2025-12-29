@@ -710,6 +710,52 @@
     // Initialize
     $(document).ready(function () {
         console.log('SVP: Frontend script initialized');
+
+        // Force Full Width Logic
+        class ForceFullWidth {
+            constructor(selector) {
+                this.element = document.querySelector(selector);
+                if (!this.element) return;
+                this.init();
+            }
+
+            init() {
+                this.adjust();
+                window.addEventListener('resize', () => this.adjust());
+                // Also adjust periodically to handle dynamic content loading
+                setInterval(() => this.adjust(), 2000);
+            }
+
+            adjust() {
+                if (!this.element) return;
+
+                // Reset to measure natural offset
+                this.element.style.marginLeft = '0';
+                this.element.style.marginRight = '0';
+                this.element.style.width = '100vw';
+                this.element.style.maxWidth = '100vw';
+
+                const rect = this.element.getBoundingClientRect();
+                const offsetLeft = rect.left;
+
+                // Calculate negative margin needed to pull to left edge
+                // We use !important via cssText to override any specifics
+                this.element.style.cssText = `
+                    width: 100vw !important;
+                    max-width: 100vw !important;
+                    margin-left: -${offsetLeft}px !important;
+                    margin-right: -2000px !important; /* arbitrary large number, overflow hidden handles it */
+                    box-sizing: border-box !important;
+                    position: relative !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                `;
+            }
+        }
+
+        // Initialize Layout Fix
+        new ForceFullWidth('.svp-app');
+
         initNavigation();
         initSliders();
         initButtons();
