@@ -3,7 +3,7 @@ Contributors: stockvaluationteam
 Tags: stock, valuation, dcf, investing, financial analysis, technical analysis, stock market
 Requires at least: 5.8
 Tested up to: 6.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,11 @@ The plugin supports all major exchanges including NYSE, NASDAQ, LSE, TSX, and mo
 
 == Changelog ==
 
+= 1.1.0 =
+* Fixed layout issues: forced full-width display to remove side whitespace
+* Improved mobile responsiveness
+* Cleaned up project structure
+
 = 1.0.0 =
 * Initial release
 * DCF Valuation module
@@ -86,6 +91,9 @@ The plugin supports all major exchanges including NYSE, NASDAQ, LSE, TSX, and mo
 * Five shortcodes for embedding
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Layout fixes and improvements.
 
 = 1.0.0 =
 Initial release of Stock Valuation Pro.
