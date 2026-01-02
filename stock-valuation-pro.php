@@ -810,28 +810,7 @@ class StockValuationPro
         return false;
     }
 
-    /**
-     * Fetch Stock Data (Yahoo Finance)
-     */
-    private function fetch_stock_data($ticker)
-    {
-        $url = "https://query1.finance.yahoo.com/v8/finance/chart/{$ticker}?interval=1d&range=5y";
 
-        $response = wp_remote_get($url, array('timeout' => 15));
-
-        if (is_wp_error($response)) {
-            return $response;
-        }
-
-        $body = wp_remote_retrieve_body($response);
-        $data = json_decode($body, true);
-
-        if (empty($data['chart']['result'])) {
-            return new WP_Error('no_data', 'No data found for ' . $ticker);
-        }
-
-        return $data;
-    }
 
     public function rest_calculate_valuation($request)
     {
