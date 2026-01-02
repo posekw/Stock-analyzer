@@ -547,6 +547,12 @@ if (empty($options['enable_dcf_valuation'])) {
                             <span>🤖</span>
                             <span>AI Analyzer</span>
                         </button>
+                        <?php if (current_user_can('manage_options')): ?>
+                            <a href="<?php echo admin_url('admin.php?page=stock-valuation-settings'); ?>" target="_blank"
+                                class="svp-btn svp-btn-secondary" style="padding: 0.5rem;" title="Configure API Keys">
+                                <span>⚙️</span>
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
 
