@@ -543,17 +543,10 @@ if (empty($options['enable_dcf_valuation'])) {
                         </p>
                     </div>
                     <div class="svp-flex svp-gap-4">
-                        <?php if (!empty($options['gemini_api_key'])): ?>
-                            <button class="svp-btn-primary" id="svp-fetch-analyze-btn">
-                                <span>🤖</span>
-                                <span>AI Analyzer</span>
-                            </button>
-                        <?php else: ?>
-                            <button class="svp-btn-secondary" id="svp-fetch-news">
-                                <span>📰</span>
-                                <span>Fetch News</span>
-                            </button>
-                        <?php endif; ?>
+                        <button class="svp-btn-primary" id="svp-fetch-analyze-btn">
+                            <span>🤖</span>
+                            <span>AI Analyzer</span>
+                        </button>
                     </div>
                 </div>
 
