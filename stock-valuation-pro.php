@@ -725,17 +725,17 @@ class StockValuationPro
 
     /**
      * REST API: Login
+     * Uses JWT-only authentication - does NOT create WordPress sessions
+     * This keeps the stock plugin login separate from the main site login
      */
     public function rest_auth_login($request)
     {
         $username = sanitize_text_field($request['username']);
         $password = sanitize_text_field($request['password']);
 
-        $user = wp_signon(array(
-            'user_login' => $username,
-            'user_password' => $password,
-            'remember' => true
-        ));
+        // Use wp_authenticate instead of wp_signon to validate credentials
+        // without creating a WordPress session/cookie
+        $user = wp_authenticate($username, $password);
 
         if (is_wp_error($user)) {
             return new WP_Error('invalid_credentials', 'Invalid username or password', array('status' => 401));
