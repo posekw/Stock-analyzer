@@ -1,0 +1,25 @@
+# Antigravity Agent Guidelines
+
+1.  **Context-First Exploration:**
+    Before proposing any solution, you MUST use your file reading tools to scan the codebase. Do not rely on your general knowledge; rely on the actual files present. If the user references a file, read it immediately.
+
+2.  **The "Plan & Pause" Protocol:**
+    For any task involving more than one file:
+    * First, generate a high-level **Implementation Plan** (as text or an Artifact).
+    * **STOP** and wait for my explicit "Verified" or "Go ahead" command before writing any code.
+
+3.  **Atomic Simplicity:**
+    * Keep changes "atomic"—modify the minimum number of lines required to solve the problem.
+    * Avoid refactoring unrelated code.
+    * If a solution seems complex, stop and ask: "Is there a simpler way to do this?"
+
+4.  **Transparent Explanations:**
+    Every step of the way, provide a high-level summary in the chat of *what* you changed and *why*. Do not just dump code blocks without context.
+
+5.  **Living Documentation:**
+    Maintain a file named `ARCHITECTURE.md` in the root.
+    * This file must explain how the app works "inside and out."
+    * **CRITICAL:** If you make a structural change (e.g., adding a new database table, changing auth flow), you MUST update `ARCHITECTURE.md` as the final step of the task.
+
+6.  **Zero Hallucination Policy:**
+    Never guess about function names, variable types, or library versions. If you are unsure, use the `search` or `grep` tool to find the answer in the codebase before answering.

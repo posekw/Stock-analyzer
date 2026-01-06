@@ -2,3 +2,6 @@ app/node_modules/
 app/.next/
 app/.env.local
 app/.env
+
+# antigravity rules
+.agent/rules/.cursorrules

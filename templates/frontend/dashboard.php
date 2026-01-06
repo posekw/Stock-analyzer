@@ -11,16 +11,8 @@ if (!defined('ABSPATH')) {
 $ticker = isset($atts['ticker']) ? strtoupper(sanitize_text_field($atts['ticker'])) : '';
 $options = get_option('svp_options', array());
 
-// Determine default active section
-$active_section = 'dcf';
-if (empty($options['enable_dcf_valuation'])) {
-    if (!empty($options['enable_relative_valuation']))
-        $active_section = 'relative';
-    elseif (!empty($options['enable_news_feed']))
-        $active_section = 'news';
-    elseif (!empty($options['enable_technical_analysis']))
-        $active_section = 'technicals';
-}
+// Determine default active section - Dashboard is the landing page
+$active_section = 'dashboard';
 ?>
 
 <div class="svp-app" id="svp-dashboard" data-ticker="<?php echo esc_attr($ticker); ?>">
@@ -41,6 +33,9 @@ if (empty($options['enable_dcf_valuation'])) {
 
             <!-- Navigation Links -->
             <div class="svp-nav-links">
+                <button class="svp-nav-link <?php echo $active_section === 'dashboard' ? 'active' : ''; ?>"
+                    data-section="dashboard">🏠 Home</button>
+
                 <?php if (!empty($options['enable_dcf_valuation'])): ?>
                     <button class="svp-nav-link <?php echo $active_section === 'dcf' ? 'active' : ''; ?>"
                         data-section="dcf">DCF</button>
@@ -122,6 +117,116 @@ if (empty($options['enable_dcf_valuation'])) {
 
     <!-- Main Content -->
     <main class="svp-main">
+
+        <!-- === DASHBOARD LANDING SECTION === -->
+        <section id="svp-section-dashboard"
+            class="svp-section <?php echo $active_section === 'dashboard' ? 'active' : ''; ?>">
+            <!-- Hero Section -->
+            <div class="svp-dashboard-hero">
+                <div class="svp-hero-content">
+                    <div class="svp-hero-badge">🚀 AI-Powered Analysis</div>
+                    <h1 class="svp-hero-title">
+                        <span class="svp-hero-gradient">Stock AI</span>
+                        <br>Analysis Platform
+                    </h1>
+                    <p class="svp-hero-subtitle">
+                        Get intelligent insights, technical analysis, and AI-powered recommendations for any stock in
+                        seconds.
+                    </p>
+
+                    <!-- Quick Search -->
+                    <div class="svp-hero-search">
+                        <div class="svp-search-box">
+                            <span class="svp-search-icon">🔍</span>
+                            <input type="text" id="svp-hero-ticker" class="svp-search-input"
+                                placeholder="Enter ticker symbol (e.g., AAPL)" maxlength="5">
+                            <button class="svp-search-btn" id="svp-hero-search-btn">Analyze</button>
+                        </div>
+                        <div class="svp-popular-tickers">
+                            <span>Popular:</span>
+                            <button class="svp-ticker-chip" data-ticker="AAPL">AAPL</button>
+                            <button class="svp-ticker-chip" data-ticker="GOOGL">GOOGL</button>
+                            <button class="svp-ticker-chip" data-ticker="MSFT">MSFT</button>
+                            <button class="svp-ticker-chip" data-ticker="TSLA">TSLA</button>
+                            <button class="svp-ticker-chip" data-ticker="AMZN">AMZN</button>
+                            <button class="svp-ticker-chip" data-ticker="NVDA">NVDA</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feature Cards -->
+            <div class="svp-feature-section">
+                <h2 class="svp-feature-heading">Choose Your Analysis</h2>
+                <div class="svp-feature-grid">
+
+                    <?php if (!empty($options['enable_news_feed'])): ?>
+                        <!-- AI Analyzer Card -->
+                        <div class="svp-feature-card svp-feature-ai" data-section="news">
+                            <div class="svp-feature-icon">🤖</div>
+                            <h3 class="svp-feature-title">AI Stock Analyzer</h3>
+                            <p class="svp-feature-desc">
+                                Get AI-powered insights, sentiment analysis, and intelligent recommendations based on the
+                                latest news and market data.
+                            </p>
+                            <ul class="svp-feature-list">
+                                <li>✨ Real-time news analysis</li>
+                                <li>📊 Sentiment detection</li>
+                                <li>🎯 Buy/Sell recommendations</li>
+                                <li>📈 Support & resistance levels</li>
+                            </ul>
+                            <button class="svp-feature-btn">
+                                <span>Get AI Insights</span>
+                                <span>→</span>
+                            </button>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($options['enable_technical_analysis'])): ?>
+                        <!-- Technical Analysis Card -->
+                        <div class="svp-feature-card svp-feature-tech" data-section="technicals">
+                            <div class="svp-feature-icon">📊</div>
+                            <h3 class="svp-feature-title">Technical Analysis</h3>
+                            <p class="svp-feature-desc">
+                                Professional-grade charts with RSI, moving averages, support/resistance levels, and pivot
+                                points.
+                            </p>
+                            <ul class="svp-feature-list">
+                                <li>📈 Interactive price charts</li>
+                                <li>🔀 Multiple timeframes</li>
+                                <li>📐 Pivot points & levels</li>
+                                <li>📉 RSI & moving averages</li>
+                            </ul>
+                            <button class="svp-feature-btn">
+                                <span>View Charts</span>
+                                <span>→</span>
+                            </button>
+                        </div>
+                    <?php endif; ?>
+
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="svp-stats-section">
+                <div class="svp-stat-card">
+                    <div class="svp-stat-value">10,000+</div>
+                    <div class="svp-stat-label">Stocks Supported</div>
+                </div>
+                <div class="svp-stat-card">
+                    <div class="svp-stat-value">Real-time</div>
+                    <div class="svp-stat-label">Market Data</div>
+                </div>
+                <div class="svp-stat-card">
+                    <div class="svp-stat-value">AI-Powered</div>
+                    <div class="svp-stat-label">Analysis Engine</div>
+                </div>
+                <div class="svp-stat-card">
+                    <div class="svp-stat-value">Free</div>
+                    <div class="svp-stat-label">To Use</div>
+                </div>
+            </div>
+        </section>
 
         <!-- === DCF SECTION === -->
         <?php if (!empty($options['enable_dcf_valuation'])): ?>

@@ -906,6 +906,77 @@
         $('#svp-analyze-ai').on('click', function () { runAIAnalysis(); });
         // Fetch and Analyze
         $('#svp-fetch-analyze-btn').on('click', handleFetchAndAnalyze);
+
+        // Initialize dashboard interactions
+        initDashboard();
+    }
+
+    // Dashboard landing page interactions
+    function initDashboard() {
+        // Hero search button
+        $('#svp-hero-search-btn').on('click', function () {
+            const ticker = $('#svp-hero-ticker').val().toUpperCase().trim();
+            if (ticker) {
+                navigateToAnalysis(ticker);
+            }
+        });
+
+        // Hero search input enter key
+        $('#svp-hero-ticker').on('keypress', function (e) {
+            if (e.which === 13) {
+                const ticker = $(this).val().toUpperCase().trim();
+                if (ticker) {
+                    navigateToAnalysis(ticker);
+                }
+            }
+        });
+
+        // Popular ticker chips
+        $('.svp-ticker-chip').on('click', function () {
+            const ticker = $(this).data('ticker');
+            navigateToAnalysis(ticker);
+        });
+
+        // Feature cards navigation
+        $('.svp-feature-card').on('click', function () {
+            const section = $(this).data('section');
+            const ticker = $('#svp-hero-ticker').val().toUpperCase().trim() || state.ticker;
+
+            if (ticker) {
+                state.ticker = ticker;
+                $('#svp-ticker-input').val(ticker);
+                updateTickerDisplays();
+            }
+
+            // Navigate to section
+            $('.svp-nav-link').removeClass('active');
+            $('.svp-nav-link[data-section="' + section + '"]').addClass('active');
+            $('.svp-section').hide().removeClass('active');
+            $('#svp-section-' + section).show().addClass('active');
+        });
+    }
+
+    // Helper to navigate from dashboard to analysis sections
+    function navigateToAnalysis(ticker) {
+        state.ticker = ticker;
+        $('#svp-ticker-input').val(ticker);
+        $('#svp-hero-ticker').val(ticker);
+        updateTickerDisplays();
+
+        // Navigate to AI Analyzer section by default (most popular feature)
+        const targetSection = svpData.options.enable_news_feed ? 'news' : 'technicals';
+
+        $('.svp-nav-link').removeClass('active');
+        $('.svp-nav-link[data-section="' + targetSection + '"]').addClass('active');
+        $('.svp-section').hide().removeClass('active');
+        $('#svp-section-' + targetSection).show().addClass('active');
+
+        // Auto-trigger the analysis
+        if (targetSection === 'news') {
+            handleFetchAndAnalyze();
+        } else {
+            fetchTechnicals();
+        }
     }
 
     // Timeframe buttons
