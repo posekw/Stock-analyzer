@@ -658,7 +658,7 @@ class StockValuationPro
     {
         if (is_user_logged_in()) {
             $user = wp_get_current_user();
-            return '<div class="svp-app svp-auth-container"><div class="svp-auth-card" style="text-align: center;">' .
+            return '<div class="svp-auth-container"><div class="svp-auth-card" style="text-align: center;">' .
                 '<h2>' . __('Welcome, ', 'stock-valuation-pro') . esc_html($user->display_name) . '</h2>' .
                 '<p>' . __('You are already logged in.', 'stock-valuation-pro') . '</p>' .
                 '<div class="svp-form-actions">' .

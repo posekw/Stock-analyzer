@@ -3,7 +3,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 ?>
-<div class="svp-app svp-auth-container">
+<div class="svp-auth-container">
     <div class="svp-auth-wrapper">
         <!-- Login Form -->
         <div class="svp-auth-card" id="svp-login-card">
