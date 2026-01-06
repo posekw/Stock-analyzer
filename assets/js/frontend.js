@@ -1006,8 +1006,8 @@
     }
 
     function loadWatchlist() {
-        // Check if user is logged in (has the JWT token or WordPress session)
-        const isLoggedIn = SVPAuth && typeof SVPAuth.isLoggedIn === 'function' ? SVPAuth.isLoggedIn() : false;
+        // Check if user is logged in using PHP-provided flag
+        const isLoggedIn = svpData && svpData.isLoggedIn;
 
         if (!isLoggedIn) {
             $('#svp-watchlist-content').hide();

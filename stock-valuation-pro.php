@@ -195,6 +195,8 @@ class StockValuationPro
             'options' => $this->get_public_options(),
             'geminiApiKey' => isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '',
             'homeUrl' => home_url(),
+            'isLoggedIn' => is_user_logged_in(),
+            'userId' => get_current_user_id(),
         ));
     }
 
