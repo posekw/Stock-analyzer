@@ -84,6 +84,10 @@ class StockValuationPro
         add_action('wp_ajax_nopriv_svp_translate_analysis', array($this, 'ajax_translate_analysis'));
         add_action('wp_ajax_svp_test_gemini', array($this, 'ajax_test_gemini'));
 
+        // Admin user management
+        add_action('wp_ajax_svp_admin_ban_user', array($this, 'ajax_admin_ban_user'));
+        add_action('wp_ajax_svp_admin_delete_user', array($this, 'ajax_admin_delete_user'));
+
         // Register REST API routes
         add_action('rest_api_init', array($this, 'register_rest_routes'));
     }
@@ -264,6 +268,15 @@ class StockValuationPro
             'manage_options',
             'stock-valuation-shortcodes',
             array($this, 'render_shortcodes_page')
+        );
+
+        add_submenu_page(
+            'stock-valuation-pro',
+            __('Users', 'stock-valuation-pro'),
+            __('Users', 'stock-valuation-pro'),
+            'manage_options',
+            'stock-valuation-users',
+            array($this, 'render_users_page')
         );
     }
 
@@ -577,6 +590,11 @@ class StockValuationPro
         include SVP_PLUGIN_DIR . 'templates/admin/shortcodes.php';
     }
 
+    public function render_users_page()
+    {
+        include SVP_PLUGIN_DIR . 'templates/admin/users.php';
+    }
+
     /**
      * Shortcode renderers
      */
@@ -752,6 +770,11 @@ class StockValuationPro
 
         if (is_wp_error($user)) {
             return new WP_Error('invalid_credentials', 'Invalid username or password', array('status' => 401));
+        }
+
+        // Check if user is banned
+        if (get_user_meta($user->ID, 'svp_user_banned', true)) {
+            return new WP_Error('user_banned', 'Your account has been suspended. Please contact support.', array('status' => 403));
         }
 
         require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
@@ -1353,6 +1376,69 @@ NEWS:
             wp_send_json_error("API returned code $code. Body: " . substr($body, 0, 200));
         }
         wp_send_json_success(array('models' => $models));
+    }
+
+    /**
+     * AJAX: Admin - Ban/Unban User
+     */
+    public function ajax_admin_ban_user()
+    {
+        check_ajax_referer('svp_admin_nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Permission denied');
+        }
+
+        $user_id = intval($_POST['user_id']);
+        $ban = intval($_POST['ban']);
+
+        if (!$user_id) {
+            wp_send_json_error('Invalid user ID');
+        }
+
+        // Prevent banning yourself
+        if ($user_id === get_current_user_id()) {
+            wp_send_json_error('You cannot ban yourself');
+        }
+
+        update_user_meta($user_id, 'svp_user_banned', $ban ? '1' : '');
+
+        wp_send_json_success(array(
+            'user_id' => $user_id,
+            'banned' => $ban
+        ));
+    }
+
+    /**
+     * AJAX: Admin - Delete User
+     */
+    public function ajax_admin_delete_user()
+    {
+        check_ajax_referer('svp_admin_nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Permission denied');
+        }
+
+        $user_id = intval($_POST['user_id']);
+
+        if (!$user_id) {
+            wp_send_json_error('Invalid user ID');
+        }
+
+        // Prevent deleting yourself
+        if ($user_id === get_current_user_id()) {
+            wp_send_json_error('You cannot delete yourself');
+        }
+
+        require_once(ABSPATH . 'wp-admin/includes/user.php');
+        $result = wp_delete_user($user_id);
+
+        if ($result) {
+            wp_send_json_success(array('user_id' => $user_id));
+        } else {
+            wp_send_json_error('Failed to delete user');
+        }
     }
 
     private function discover_gemini_models($apiKey)
