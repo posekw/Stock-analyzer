@@ -1729,7 +1729,7 @@
                 if (response.token) {
                     this.loginSuccess(response);
                     msg.addClass('success').text('Login successful! Redirecting...');
-                    setTimeout(() => window.location.href = svpData.homeUrl + 'stock/', 1000);
+                    setTimeout(() => window.location.href = svpData.homeUrl + '/stock/', 1000);
                 } else {
                     throw new Error('Invalid response');
                 }
@@ -1771,7 +1771,7 @@
                 if (response.token) {
                     this.loginSuccess(response);
                     msg.addClass('success').text('Registration successful! Redirecting...');
-                    setTimeout(() => window.location.href = svpData.homeUrl + 'stock/', 1000);
+                    setTimeout(() => window.location.href = svpData.homeUrl + '/stock/', 1000);
                 }
 
             } catch (err) {
