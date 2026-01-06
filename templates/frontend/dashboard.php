@@ -83,6 +83,34 @@ $active_section = 'dashboard';
         </div>
     </nav>
 
+    <!-- Watchlist Sidebar -->
+    <aside class="svp-watchlist-sidebar" id="svp-watchlist-sidebar">
+        <button class="svp-watchlist-toggle" id="svp-watchlist-toggle" title="Toggle Watchlist">
+            <span class="svp-watchlist-toggle-icon">📋</span>
+        </button>
+        <div class="svp-watchlist-panel" id="svp-watchlist-panel">
+            <div class="svp-watchlist-header">
+                <h3>📋 My Watchlist</h3>
+                <button class="svp-watchlist-add" id="svp-watchlist-add-btn" title="Add Current Ticker">
+                    <span>➕</span>
+                </button>
+            </div>
+            <div class="svp-watchlist-content" id="svp-watchlist-content">
+                <!-- Watchlist items will be rendered here by JavaScript -->
+                <div class="svp-watchlist-empty" id="svp-watchlist-empty">
+                    <span>📭</span>
+                    <p>Your watchlist is empty</p>
+                    <small>Add stocks to track them here</small>
+                </div>
+            </div>
+            <div class="svp-watchlist-login" id="svp-watchlist-login" style="display: none;">
+                <span>🔐</span>
+                <p>Login to save your watchlist</p>
+                <a href="<?php echo esc_url(home_url('/login/')); ?>" class="svp-btn svp-btn-primary svp-btn-sm">Login</a>
+            </div>
+        </div>
+    </aside>
+
     <!-- Settings Modal -->
     <div class="svp-modal" id="svp-settings-modal" style="display: none;">
         <div class="svp-modal-overlay"></div>

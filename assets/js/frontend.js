@@ -777,6 +777,7 @@
         initButtons();
         initTickerInput();
         initTimeframeButtons();
+        initWatchlist();
 
         // Load initial ticker if set
         const initialTicker = $('#svp-dashboard').data('ticker');
@@ -977,6 +978,153 @@
         } else {
             fetchTechnicals();
         }
+    }
+
+    // ========================================
+    // WATCHLIST FUNCTIONALITY
+    // ========================================
+    let watchlistData = [];
+
+    function initWatchlist() {
+        // Toggle sidebar
+        $('#svp-watchlist-toggle').on('click', function () {
+            $('#svp-watchlist-sidebar').toggleClass('open');
+        });
+
+        // Add current ticker to watchlist
+        $('#svp-watchlist-add-btn').on('click', function () {
+            const ticker = state.ticker || $('#svp-ticker-input').val().toUpperCase().trim();
+            if (ticker) {
+                addToWatchlist(ticker);
+            } else {
+                console.log('No ticker to add');
+            }
+        });
+
+        // Load watchlist on page load (if logged in)
+        loadWatchlist();
+    }
+
+    function loadWatchlist() {
+        // Check if user is logged in (has the JWT token or WordPress session)
+        const isLoggedIn = SVPAuth && typeof SVPAuth.isLoggedIn === 'function' ? SVPAuth.isLoggedIn() : false;
+
+        if (!isLoggedIn) {
+            $('#svp-watchlist-content').hide();
+            $('#svp-watchlist-login').show();
+            $('#svp-watchlist-add-btn').hide();
+            return;
+        }
+
+        $('#svp-watchlist-content').show();
+        $('#svp-watchlist-login').hide();
+        $('#svp-watchlist-add-btn').show();
+
+        $.ajax({
+            url: svpData.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'svp_get_watchlist',
+                _ajax_nonce: svpData.nonce
+            },
+            success: function (response) {
+                if (response.success && response.data.watchlist) {
+                    watchlistData = response.data.watchlist;
+                    renderWatchlist();
+                }
+            },
+            error: function () {
+                console.log('Failed to load watchlist');
+            }
+        });
+    }
+
+    function addToWatchlist(ticker) {
+        if (!ticker) return;
+
+        $.ajax({
+            url: svpData.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'svp_add_to_watchlist',
+                ticker: ticker,
+                _ajax_nonce: svpData.nonce
+            },
+            success: function (response) {
+                if (response.success && response.data.watchlist) {
+                    watchlistData = response.data.watchlist;
+                    renderWatchlist();
+                    // Open the sidebar to show the added item
+                    $('#svp-watchlist-sidebar').addClass('open');
+                }
+            },
+            error: function () {
+                console.log('Failed to add to watchlist');
+            }
+        });
+    }
+
+    function removeFromWatchlist(ticker) {
+        $.ajax({
+            url: svpData.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'svp_remove_from_watchlist',
+                ticker: ticker,
+                _ajax_nonce: svpData.nonce
+            },
+            success: function (response) {
+                if (response.success && response.data.watchlist) {
+                    watchlistData = response.data.watchlist;
+                    renderWatchlist();
+                }
+            },
+            error: function () {
+                console.log('Failed to remove from watchlist');
+            }
+        });
+    }
+
+    function renderWatchlist() {
+        const $content = $('#svp-watchlist-content');
+        const $empty = $('#svp-watchlist-empty');
+
+        if (watchlistData.length === 0) {
+            $empty.show();
+            $content.find('.svp-watchlist-item').remove();
+            return;
+        }
+
+        $empty.hide();
+        $content.find('.svp-watchlist-item').remove();
+
+        watchlistData.forEach(function (ticker) {
+            const $item = $(`
+                <div class="svp-watchlist-item" data-ticker="${escapeHtml(ticker)}">
+                    <div class="svp-watchlist-item-info">
+                        <span class="svp-watchlist-item-ticker">${escapeHtml(ticker)}</span>
+                    </div>
+                    <button class="svp-watchlist-item-remove" title="Remove">✕</button>
+                </div>
+            `);
+
+            // Click to analyze
+            $item.on('click', function (e) {
+                if (!$(e.target).hasClass('svp-watchlist-item-remove')) {
+                    const t = $(this).data('ticker');
+                    navigateToAnalysis(t);
+                }
+            });
+
+            // Remove button
+            $item.find('.svp-watchlist-item-remove').on('click', function (e) {
+                e.stopPropagation();
+                const t = $(this).closest('.svp-watchlist-item').data('ticker');
+                removeFromWatchlist(t);
+            });
+
+            $content.append($item);
+        });
     }
 
     // Timeframe buttons

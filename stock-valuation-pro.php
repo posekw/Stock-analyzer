@@ -88,6 +88,11 @@ class StockValuationPro
         add_action('wp_ajax_svp_admin_ban_user', array($this, 'ajax_admin_ban_user'));
         add_action('wp_ajax_svp_admin_delete_user', array($this, 'ajax_admin_delete_user'));
 
+        // User watchlist
+        add_action('wp_ajax_svp_get_watchlist', array($this, 'ajax_get_watchlist'));
+        add_action('wp_ajax_svp_add_to_watchlist', array($this, 'ajax_add_to_watchlist'));
+        add_action('wp_ajax_svp_remove_from_watchlist', array($this, 'ajax_remove_from_watchlist'));
+
         // Register REST API routes
         add_action('rest_api_init', array($this, 'register_rest_routes'));
     }
@@ -1439,6 +1444,86 @@ NEWS:
         } else {
             wp_send_json_error('Failed to delete user');
         }
+    }
+
+    /**
+     * AJAX: Get User Watchlist
+     */
+    public function ajax_get_watchlist()
+    {
+        check_ajax_referer('svp_nonce');
+
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            wp_send_json_error('Not logged in');
+        }
+
+        $watchlist = get_user_meta($user_id, 'svp_watchlist', true);
+        if (!is_array($watchlist)) {
+            $watchlist = array();
+        }
+
+        wp_send_json_success(array('watchlist' => $watchlist));
+    }
+
+    /**
+     * AJAX: Add Ticker to Watchlist
+     */
+    public function ajax_add_to_watchlist()
+    {
+        check_ajax_referer('svp_nonce');
+
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            wp_send_json_error('Not logged in');
+        }
+
+        $ticker = strtoupper(sanitize_text_field($_POST['ticker'] ?? ''));
+        if (empty($ticker)) {
+            wp_send_json_error('Invalid ticker');
+        }
+
+        $watchlist = get_user_meta($user_id, 'svp_watchlist', true);
+        if (!is_array($watchlist)) {
+            $watchlist = array();
+        }
+
+        // Add ticker if not already in watchlist
+        if (!in_array($ticker, $watchlist)) {
+            $watchlist[] = $ticker;
+            update_user_meta($user_id, 'svp_watchlist', $watchlist);
+        }
+
+        wp_send_json_success(array('watchlist' => $watchlist));
+    }
+
+    /**
+     * AJAX: Remove Ticker from Watchlist
+     */
+    public function ajax_remove_from_watchlist()
+    {
+        check_ajax_referer('svp_nonce');
+
+        $user_id = get_current_user_id();
+        if (!$user_id) {
+            wp_send_json_error('Not logged in');
+        }
+
+        $ticker = strtoupper(sanitize_text_field($_POST['ticker'] ?? ''));
+        if (empty($ticker)) {
+            wp_send_json_error('Invalid ticker');
+        }
+
+        $watchlist = get_user_meta($user_id, 'svp_watchlist', true);
+        if (!is_array($watchlist)) {
+            $watchlist = array();
+        }
+
+        // Remove ticker from watchlist
+        $watchlist = array_values(array_diff($watchlist, array($ticker)));
+        update_user_meta($user_id, 'svp_watchlist', $watchlist);
+
+        wp_send_json_success(array('watchlist' => $watchlist));
     }
 
     private function discover_gemini_models($apiKey)
