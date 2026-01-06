@@ -761,8 +761,12 @@ class StockValuationPro
         $email = sanitize_email($request['email']);
         $password = sanitize_text_field($request['password']);
 
-        if (username_exists($username) || email_exists($email)) {
-            return new WP_Error('user_exists', 'Username or Email already exists', array('status' => 400));
+        if (username_exists($username)) {
+            return new WP_Error('username_exists', 'This username is already taken. Please choose a different username.', array('status' => 400));
+        }
+
+        if (email_exists($email)) {
+            return new WP_Error('email_exists', 'This email is already registered. Please use a different email or try logging in.', array('status' => 400));
         }
 
         $user_id = wp_create_user($username, $password, $email);
