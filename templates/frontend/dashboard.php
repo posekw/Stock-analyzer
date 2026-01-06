@@ -66,6 +66,17 @@ if (empty($options['enable_dcf_valuation'])) {
                 <input type="text" class="svp-nav-ticker-input" id="svp-ticker-input"
                     value="<?php echo esc_attr($ticker); ?>" placeholder="AAPL" maxlength="5">
             </div>
+
+            <!-- User Profile & Logout -->
+            <div class="svp-user-profile" id="svp-user-profile" style="display: none;">
+                <div class="svp-user-info">
+                    <span class="svp-user-avatar">👤</span>
+                    <span class="svp-username" id="svp-username-display">User</span>
+                </div>
+                <button class="svp-btn-logout" id="svp-btn-logout" title="Logout">
+                    <span class="dashicons dashicons-migrate"></span> Logout
+                </button>
+            </div>
         </div>
     </nav>
 

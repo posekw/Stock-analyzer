@@ -1786,29 +1786,79 @@
             this.setupAjax();
         }
 
-        logout() {
-            localStorage.removeItem('svp_token');
-            localStorage.removeItem('svp_user');
-            this.token = null;
-            this.user = null;
-            window.location.reload();
-        }
-
-        setLoading(btn, isLoading) {
-            if (isLoading) {
-                btn.prop('disabled', true).addClass('loading');
-            } else {
-                btn.prop('disabled', false).removeClass('loading');
-            }
-        }
-
         checkAuth() {
-            // Check if token validates basically
+            // Check if token exists
             if (this.token) {
+                // Validate token with server to be sure
+                this.validateToken();
+
                 // If on auth page, redirect to home
                 if ($('.svp-auth-container').length > 0) {
                     window.location.href = svpData.homeUrl || '/';
                 }
+            } else {
+                // If checking auth on a dashboard page and no token, maybe prompt login?
+                // For now, we assume the shortcode is public but some features might be hidden
+                // or we just hide the user profile
+                this.renderUserProfile();
+            }
+        }
+
+        async validateToken() {
+            try {
+                const response = await $.ajax({
+                    url: svpData.restUrl + 'svp/v1/auth/me',
+                    type: 'GET',
+                    beforeSend: (xhr) => {
+                        xhr.setRequestHeader('Authorization', 'Bearer ' + this.token);
+                    }
+                });
+
+                if (response.id) {
+                    // Update user info just in case
+                    this.user = {
+                        email: response.email,
+                        display_name: response.display_name,
+                        username: response.username
+                    };
+                    localStorage.setItem('svp_user', JSON.stringify(this.user));
+                    this.renderUserProfile();
+                }
+
+            } catch (err) {
+                // Token invalid
+                this.logout(false); // Don't reload, just clear
+            }
+        }
+
+        renderUserProfile() {
+            const profileEl = $('#svp-user-profile');
+            const usernameEl = $('#svp-username-display');
+            const logoutBtn = $('#svp-btn-logout');
+
+            if (this.token && this.user) {
+                usernameEl.text(this.user.display_name || this.user.username || 'User');
+                profileEl.css('display', 'flex'); // Show profile
+
+                // Bind logout
+                logoutBtn.off('click').on('click', (e) => {
+                    e.preventDefault();
+                    this.logout();
+                });
+            } else {
+                profileEl.hide();
+            }
+        }
+
+        logout(reload = true) {
+            localStorage.removeItem('svp_token');
+            localStorage.removeItem('svp_user');
+            this.token = null;
+            this.user = null;
+            if (reload) {
+                window.location.reload();
+            } else {
+                this.renderUserProfile();
             }
         }
     }
