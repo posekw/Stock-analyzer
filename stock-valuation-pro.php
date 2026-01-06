@@ -123,6 +123,35 @@ class StockValuationPro
      */
     public function enqueue_frontend_assets()
     {
+        global $post;
+
+        // Check if we are on a singular post/page and it contains one of our shortcodes
+        if (!is_a($post, 'WP_Post')) {
+            return;
+        }
+
+        $shortcodes = array(
+            'stock_valuation',
+            'stock_technicals',
+            'stock_relative',
+            'stock_news',
+            'stock_dashboard',
+            'stock_auth'
+        );
+
+        $found = false;
+        foreach ($shortcodes as $shortcode) {
+            if (has_shortcode($post->post_content, $shortcode)) {
+                $found = true;
+                break;
+            }
+        }
+
+        // Allow filtering to enable assets on other pages (e.g. widgets)
+        if (!apply_filters('svp_should_load_assets', $found, $post)) {
+            return;
+        }
+
         // Enqueue CSS with cache busting
         wp_enqueue_style(
             'stock-valuation-pro-style', // Renamed handle to avoid conflicts
