@@ -859,7 +859,8 @@ class StockValuationPro
         $gemini_api_key = get_user_meta($user_id, 'svp_gemini_api_key', true);
 
         return rest_ensure_response(array(
-            'gemini_api_key' => $gemini_api_key ? $this->mask_api_key($gemini_api_key) : '',
+            'gemini_api_key' => $gemini_api_key ? $gemini_api_key : '',
+            'gemini_api_key_masked' => $gemini_api_key ? $this->mask_api_key($gemini_api_key) : '',
             'has_gemini_key' => !empty($gemini_api_key)
         ));
     }

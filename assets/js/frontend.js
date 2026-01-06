@@ -1733,7 +1733,10 @@
                 });
 
                 if (response.has_gemini_key) {
-                    $('#svp-gemini-api-key').attr('placeholder', response.gemini_api_key + ' (saved)');
+                    // Store the actual key for use with API requests
+                    setUserGeminiKey(response.gemini_api_key);
+                    // Show masked version in placeholder
+                    $('#svp-gemini-api-key').attr('placeholder', response.gemini_api_key_masked + ' (saved)');
                 }
             } catch (err) {
                 console.error('SVP: Failed to load settings', err);
@@ -1930,6 +1933,9 @@
                     };
                     localStorage.setItem('svp_user', JSON.stringify(this.user));
                     this.renderUserProfile();
+
+                    // Load user settings (including API key) in the background
+                    this.loadSettings();
                 }
 
             } catch (err) {
