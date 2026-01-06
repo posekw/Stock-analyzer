@@ -1717,11 +1717,12 @@
             };
 
             try {
+                console.log('SVP: Login attempt for:', data.username);
                 const response = await $.ajax({
-                    url: svpData.restUrl + 'svp/v1/auth/login',
+                    url: svpData.restUrl + 'auth/login',
                     type: 'POST',
                     data: data,
-                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8' // Standard form encoding usually fine
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8'
                 });
 
                 // REST API returns direct JSON, typically
@@ -1742,6 +1743,7 @@
 
         async handleRegister(e) {
             e.preventDefault();
+            console.log('SVP: Registration form submitted');
             const form = $(e.currentTarget);
             const btn = form.find('button[type="submit"]');
             const msg = form.find('.svp-auth-message');
@@ -1755,12 +1757,16 @@
                 password: form.find('input[name="password"]').val()
             };
 
+            console.log('SVP: Registration data:', { username: data.username, email: data.email });
+
             try {
                 const response = await $.ajax({
-                    url: svpData.restUrl + 'svp/v1/auth/register',
+                    url: svpData.restUrl + 'auth/register',
                     type: 'POST',
                     data: data
                 });
+
+                console.log('SVP: Registration response:', response);
 
                 if (response.token) {
                     this.loginSuccess(response);
@@ -1769,6 +1775,7 @@
                 }
 
             } catch (err) {
+                console.error('SVP: Registration error:', err);
                 const errorMsg = err.responseJSON?.message || 'Registration failed.';
                 msg.addClass('error').text(errorMsg);
                 this.setLoading(btn, false);
@@ -1808,7 +1815,7 @@
         async validateToken() {
             try {
                 const response = await $.ajax({
-                    url: svpData.restUrl + 'svp/v1/auth/me',
+                    url: svpData.restUrl + 'auth/me',
                     type: 'GET',
                     beforeSend: (xhr) => {
                         xhr.setRequestHeader('Authorization', 'Bearer ' + this.token);
@@ -1863,6 +1870,18 @@
                 window.location.reload();
             } else {
                 this.renderUserProfile();
+            }
+        }
+
+        setLoading(btn, isLoading) {
+            if (isLoading) {
+                btn.prop('disabled', true);
+                btn.find('.svp-btn-text').hide();
+                btn.find('.svp-btn-loader').show();
+            } else {
+                btn.prop('disabled', false);
+                btn.find('.svp-btn-text').show();
+                btn.find('.svp-btn-loader').hide();
             }
         }
     }

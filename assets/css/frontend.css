@@ -3096,3 +3096,13 @@ main {
         transform: translate(-50%, -50%) rotate(360deg);
     }
 }
+
+/* Default loader hidden state */
+.svp-btn-loader {
+    display: none;
+}
+
+.svp-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
