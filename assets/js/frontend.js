@@ -12,6 +12,22 @@
         return;
     }
 
+    // Store user's Gemini API key
+    let userGeminiKey = localStorage.getItem('svp_user_gemini_key') || '';
+
+    // Function to get user's Gemini API key
+    function getUserGeminiKey() {
+        return userGeminiKey;
+    }
+
+    // Function to set user's Gemini API key
+    function setUserGeminiKey(key) {
+        userGeminiKey = key;
+        if (key) {
+            localStorage.setItem('svp_user_gemini_key', key);
+        }
+    }
+
     /**
      * Advanced Chart Implementation - Matching main web app
      */
@@ -1503,7 +1519,8 @@
                 ticker: state.ticker,
                 price: state.currentPrice,
                 news: newsData,
-                nonce: svpData.nonce
+                nonce: svpData.nonce,
+                user_api_key: getUserGeminiKey()
             },
             success: function (response) {
                 if (response.success) {
@@ -1753,6 +1770,9 @@
                 if (response.success) {
                     status.addClass('success').text('Settings saved successfully!').show();
                     $('#svp-gemini-api-key').val('').attr('placeholder', '********' + geminiKey.slice(-4) + ' (saved)');
+
+                    // Store key locally for use in AI analyzer requests
+                    setUserGeminiKey(geminiKey);
 
                     // Update svpData so AI analyzer uses the new key
                     if (typeof svpData !== 'undefined') {

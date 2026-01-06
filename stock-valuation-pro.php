@@ -1168,8 +1168,14 @@ class StockValuationPro
 
         $apiKey = isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '';
 
+        // Check if user provided their own API key
+        $userApiKey = isset($_POST['user_api_key']) ? sanitize_text_field($_POST['user_api_key']) : '';
+        if (!empty($userApiKey)) {
+            $apiKey = $userApiKey;
+        }
+
         if (empty($apiKey)) {
-            wp_send_json_success($this->generate_simulated_analysis($news, $ticker, 'API Key not configured'));
+            wp_send_json_success($this->generate_simulated_analysis($news, $ticker, 'API Key not configured. Please add your Gemini API key in Settings.'));
             return;
         }
 
@@ -1215,8 +1221,14 @@ class StockValuationPro
 
         $apiKey = isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '';
 
+        // Check if user provided their own API key
+        $userApiKey = isset($_POST['user_api_key']) ? sanitize_text_field($_POST['user_api_key']) : '';
+        if (!empty($userApiKey)) {
+            $apiKey = $userApiKey;
+        }
+
         if (empty($apiKey)) {
-            wp_send_json_error('API Key not configured');
+            wp_send_json_error('API Key not configured. Please add your Gemini API key in Settings.');
         }
 
         // Build translation prompt same as main web app
