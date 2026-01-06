@@ -1794,7 +1794,8 @@
 
                 // If on auth page (and it's the actual login form), redirect to home
                 if ($('#svp-login-card').length > 0) {
-                    window.location.href = svpData.homeUrl || '/';
+                    console.log('SVP: User already logged in, but allowing view of login card for debugging.');
+                    // window.location.href = svpData.homeUrl || '/'; 
                 }
             } else {
                 // If checking auth on a dashboard page and no token, maybe prompt login?

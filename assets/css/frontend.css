@@ -2916,7 +2916,13 @@ main {
     border-radius: var(--svp-radius-lg);
     padding: 40px;
     box-shadow: var(--svp-shadow);
-    animation: svpFadeIn 0.3s ease-out;
+    animation: svpFadeIn 0.3s ease-out forwards;
+    /* Ensure it stays visible */
+    z-index: 100;
+    /* Ensure on top */
+    position: relative;
+    opacity: 1;
+    /* Fallback */
 }
 
 @keyframes svpFadeIn {
