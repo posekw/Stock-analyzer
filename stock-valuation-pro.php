@@ -3,7 +3,7 @@
  * Plugin Name: Stock Valuation Pro
  * Plugin URI: https://example.com/stock-valuation-pro
  * Description: A comprehensive stock valuation plugin with DCF analysis, technical analysis, relative valuation, and news feeds.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Stock Valuation Team
  * Author URI: https://example.com
  * License: GPL v2 or later
