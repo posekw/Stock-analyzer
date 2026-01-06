@@ -1688,6 +1688,85 @@
                 e.preventDefault();
                 this.logout();
             });
+
+            // Settings Modal
+            $(document).on('click', '#svp-btn-settings', () => this.openSettings());
+            $(document).on('click', '#svp-settings-close, .svp-modal-overlay', () => this.closeSettings());
+            $(document).on('submit', '#svp-settings-form', (e) => this.saveSettings(e));
+        }
+
+        openSettings() {
+            $('#svp-settings-modal').show();
+            this.loadSettings();
+        }
+
+        closeSettings() {
+            $('#svp-settings-modal').hide();
+            $('#svp-settings-status').removeClass('success error').text('').hide();
+        }
+
+        async loadSettings() {
+            try {
+                const response = await $.ajax({
+                    url: svpData.restUrl + 'user/settings',
+                    type: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + this.token
+                    }
+                });
+
+                if (response.has_gemini_key) {
+                    $('#svp-gemini-api-key').attr('placeholder', response.gemini_api_key + ' (saved)');
+                }
+            } catch (err) {
+                console.error('SVP: Failed to load settings', err);
+            }
+        }
+
+        async saveSettings(e) {
+            e.preventDefault();
+            const form = $(e.currentTarget);
+            const btn = form.find('button[type="submit"]');
+            const status = $('#svp-settings-status');
+
+            this.setLoading(btn, true);
+            status.removeClass('success error').text('');
+
+            const geminiKey = $('#svp-gemini-api-key').val();
+
+            if (!geminiKey) {
+                status.addClass('error').text('Please enter a Gemini API key').show();
+                this.setLoading(btn, false);
+                return;
+            }
+
+            try {
+                const response = await $.ajax({
+                    url: svpData.restUrl + 'user/settings',
+                    type: 'POST',
+                    data: { gemini_api_key: geminiKey },
+                    headers: {
+                        'Authorization': 'Bearer ' + this.token
+                    }
+                });
+
+                if (response.success) {
+                    status.addClass('success').text('Settings saved successfully!').show();
+                    $('#svp-gemini-api-key').val('').attr('placeholder', '********' + geminiKey.slice(-4) + ' (saved)');
+
+                    // Update svpData so AI analyzer uses the new key
+                    if (typeof svpData !== 'undefined') {
+                        svpData.hasUserGeminiKey = true;
+                    }
+
+                    setTimeout(() => this.closeSettings(), 1500);
+                }
+            } catch (err) {
+                console.error('SVP: Failed to save settings', err);
+                status.addClass('error').text('Failed to save settings. Please try again.').show();
+            } finally {
+                this.setLoading(btn, false);
+            }
         }
 
         setupAjax() {

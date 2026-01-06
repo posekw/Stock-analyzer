@@ -721,6 +721,19 @@ class StockValuationPro
             'callback' => array($this, 'rest_get_news'),
             'permission_callback' => array($this, 'check_api_permission'),
         ));
+
+        // User Settings Routes
+        register_rest_route('svp/v1', '/user/settings', array(
+            'methods' => 'GET',
+            'callback' => array($this, 'rest_get_user_settings'),
+            'permission_callback' => array($this, 'check_api_permission'),
+        ));
+
+        register_rest_route('svp/v1', '/user/settings', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'rest_save_user_settings'),
+            'permission_callback' => array($this, 'check_api_permission'),
+        ));
     }
 
     /**
@@ -820,6 +833,91 @@ class StockValuationPro
             'email' => $user->user_email,
             'display_name' => $user->display_name
         ));
+    }
+
+    /**
+     * REST API: Get User Settings
+     */
+    public function rest_get_user_settings($request)
+    {
+        // Get user ID from JWT token
+        $auth_header = $request->get_header('Authorization');
+        if (!$auth_header || strpos($auth_header, 'Bearer ') !== 0) {
+            return new WP_Error('no_token', 'No token provided', array('status' => 401));
+        }
+
+        $token = substr($auth_header, 7);
+        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
+        $jwt = new SVP_JWT_Handler();
+        $user_id = $jwt->validate_token($token);
+
+        if (!$user_id) {
+            return new WP_Error('invalid_token', 'Invalid Token', array('status' => 401));
+        }
+
+        // Get user settings from user meta
+        $gemini_api_key = get_user_meta($user_id, 'svp_gemini_api_key', true);
+
+        return rest_ensure_response(array(
+            'gemini_api_key' => $gemini_api_key ? $this->mask_api_key($gemini_api_key) : '',
+            'has_gemini_key' => !empty($gemini_api_key)
+        ));
+    }
+
+    /**
+     * REST API: Save User Settings
+     */
+    public function rest_save_user_settings($request)
+    {
+        // Get user ID from JWT token
+        $auth_header = $request->get_header('Authorization');
+        if (!$auth_header || strpos($auth_header, 'Bearer ') !== 0) {
+            return new WP_Error('no_token', 'No token provided', array('status' => 401));
+        }
+
+        $token = substr($auth_header, 7);
+        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
+        $jwt = new SVP_JWT_Handler();
+        $user_id = $jwt->validate_token($token);
+
+        if (!$user_id) {
+            return new WP_Error('invalid_token', 'Invalid Token', array('status' => 401));
+        }
+
+        // Save Gemini API key if provided
+        $gemini_api_key = sanitize_text_field($request['gemini_api_key']);
+        if (!empty($gemini_api_key)) {
+            update_user_meta($user_id, 'svp_gemini_api_key', $gemini_api_key);
+        }
+
+        return rest_ensure_response(array(
+            'success' => true,
+            'message' => 'Settings saved successfully'
+        ));
+    }
+
+    /**
+     * Mask API key for display (show only last 4 characters)
+     */
+    private function mask_api_key($key)
+    {
+        if (strlen($key) <= 4) {
+            return '****';
+        }
+        return str_repeat('*', strlen($key) - 4) . substr($key, -4);
+    }
+
+    /**
+     * Get user's Gemini API key (for internal use)
+     */
+    public function get_user_gemini_key($user_id)
+    {
+        $user_key = get_user_meta($user_id, 'svp_gemini_api_key', true);
+        if (!empty($user_key)) {
+            return $user_key;
+        }
+        // Fall back to global key if user doesn't have one
+        return isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '';
     }
 
     /**

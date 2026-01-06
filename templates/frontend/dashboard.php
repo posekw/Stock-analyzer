@@ -73,6 +73,9 @@ if (empty($options['enable_dcf_valuation'])) {
                     <span class="svp-user-avatar">👤</span>
                     <span class="svp-username" id="svp-username-display">User</span>
                 </div>
+                <button class="svp-btn-settings" id="svp-btn-settings" title="Settings">
+                    ⚙️
+                </button>
                 <button class="svp-btn-logout" id="svp-btn-logout" title="Logout">
                     <span class="dashicons dashicons-migrate"></span> Logout
                 </button>
@@ -84,6 +87,38 @@ if (empty($options['enable_dcf_valuation'])) {
             </a>
         </div>
     </nav>
+
+    <!-- Settings Modal -->
+    <div class="svp-modal" id="svp-settings-modal" style="display: none;">
+        <div class="svp-modal-overlay"></div>
+        <div class="svp-modal-content">
+            <div class="svp-modal-header">
+                <h2>⚙️ User Settings</h2>
+                <button class="svp-modal-close" id="svp-settings-close">&times;</button>
+            </div>
+            <div class="svp-modal-body">
+                <form id="svp-settings-form">
+                    <div class="svp-form-group">
+                        <label for="svp-gemini-api-key">Google Gemini API Key</label>
+                        <input type="password" id="svp-gemini-api-key" name="gemini_api_key"
+                            placeholder="Enter your Gemini API key..." class="svp-input">
+                        <small class="svp-form-hint">
+                            Get your API key from <a href="https://makersuite.google.com/app/apikey"
+                                target="_blank">Google AI Studio</a>
+                        </small>
+                    </div>
+                    <div class="svp-settings-status" id="svp-settings-status"></div>
+                    <div class="svp-form-actions">
+                        <button type="submit" class="svp-btn svp-btn-primary">
+                            <span class="svp-btn-text">Save Settings</span>
+                            <span class="svp-btn-loader" style="display: none;">⏳</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Main Content -->
     <main class="svp-main">
