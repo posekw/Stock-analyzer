@@ -77,6 +77,11 @@ if (empty($options['enable_dcf_valuation'])) {
                     <span class="dashicons dashicons-migrate"></span> Logout
                 </button>
             </div>
+
+            <!-- Login Button (shown when not logged in) -->
+            <a href="<?php echo esc_url(home_url('/login/')); ?>" class="svp-btn-login" id="svp-btn-login">
+                <span>🔐</span> Login
+            </a>
         </div>
     </nav>
 

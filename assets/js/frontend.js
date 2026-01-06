@@ -1836,10 +1836,12 @@
             const profileEl = $('#svp-user-profile');
             const usernameEl = $('#svp-username-display');
             const logoutBtn = $('#svp-btn-logout');
+            const loginBtn = $('#svp-btn-login');
 
             if (this.token && this.user) {
                 usernameEl.text(this.user.display_name || this.user.username || 'User');
                 profileEl.css('display', 'flex'); // Show profile
+                loginBtn.hide(); // Hide login button when logged in
 
                 // Bind logout
                 logoutBtn.off('click').on('click', (e) => {
@@ -1848,6 +1850,7 @@
                 });
             } else {
                 profileEl.hide();
+                loginBtn.show(); // Show login button when not logged in
             }
         }
 

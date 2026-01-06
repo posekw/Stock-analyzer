@@ -279,6 +279,30 @@
     border-color: rgba(239, 68, 68, 0.4);
 }
 
+/* Login Button */
+.svp-btn-login {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--svp-emerald-500), var(--svp-emerald-600));
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--svp-transition);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.svp-btn-login:hover {
+    background: linear-gradient(135deg, var(--svp-emerald-400), var(--svp-emerald-500));
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    transform: translateY(-1px);
+}
+
 /* Main Content Area */
 .svp-main {
     position: relative;
