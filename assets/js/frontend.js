@@ -1969,8 +1969,10 @@
         logout(reload = true) {
             localStorage.removeItem('svp_token');
             localStorage.removeItem('svp_user');
+            localStorage.removeItem('svp_user_gemini_key'); // Clear user's API key on logout
             this.token = null;
             this.user = null;
+            userGeminiKey = ''; // Clear the in-memory key too
             if (reload) {
                 window.location.reload();
             } else {
