@@ -1792,8 +1792,8 @@
                 // Validate token with server to be sure
                 this.validateToken();
 
-                // If on auth page, redirect to home
-                if ($('.svp-auth-container').length > 0) {
+                // If on auth page (and it's the actual login form), redirect to home
+                if ($('#svp-login-card').length > 0) {
                     window.location.href = svpData.homeUrl || '/';
                 }
             } else {

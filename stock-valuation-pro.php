@@ -657,7 +657,15 @@ class StockValuationPro
     public function render_auth($atts)
     {
         if (is_user_logged_in()) {
-            return '<script>window.location.href = "' . home_url() . '";</script>';
+            $user = wp_get_current_user();
+            return '<div class="svp-app svp-auth-container"><div class="svp-auth-card" style="text-align: center;">' .
+                '<h2>' . __('Welcome, ', 'stock-valuation-pro') . esc_html($user->display_name) . '</h2>' .
+                '<p>' . __('You are already logged in.', 'stock-valuation-pro') . '</p>' .
+                '<div class="svp-form-actions">' .
+                '<a href="' . home_url() . '" class="svp-btn svp-btn-primary">' . __('Go to Dashboard', 'stock-valuation-pro') . '</a>' .
+                '<a href="' . wp_logout_url(home_url()) . '" class="svp-btn svp-btn-secondary" style="margin-top: 10px;">' . __('Logout', 'stock-valuation-pro') . '</a>' .
+                '</div>' .
+                '</div></div>';
         }
 
         ob_start();
