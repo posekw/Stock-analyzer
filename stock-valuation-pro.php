@@ -172,8 +172,31 @@ class StockValuationPro
     {
         $user_id = $this->get_authenticated_user_id();
 
+        if ($user_id) {
+            $user_id = (int) $user_id;
+        } else {
+            // Fallback for WP Admin if not logged in via specific SVP login
+            if (current_user_can('manage_options')) {
+                $current_wp_user = wp_get_current_user();
+                // Try to find SVP user by email
+                global $wpdb;
+                $table_users = $wpdb->prefix . 'svp_users';
+                $existing = $wpdb->get_row($wpdb->prepare(
+                    "SELECT id FROM $table_users WHERE email = %s",
+                    $current_wp_user->user_email
+                ));
+                if ($existing) {
+                    $user_id = $existing->id;
+                }
+            } else {
+                return new WP_Error('no_user', 'User not found', array('status' => 401));
+            }
+        }
+
+        // If we still don't have a user ID (e.g. WP Admin with no SVP account), we might need to handle it.
+        // For now, let's assume if they passed check_api_permission they should be able to save if we can find an ID.
         if (!$user_id) {
-            return new WP_Error('unauthorized', 'User not logged in', array('status' => 401));
+            return new WP_Error('no_svp_user', 'Please register an account in the plugin first.', array('status' => 401));
         }
 
         if ($request->get_method() === 'POST') {
@@ -822,6 +845,11 @@ class StockValuationPro
     {
         // 1. Check if user is logged in via custom session
         if ($this->auth->is_logged_in()) {
+            return true;
+        }
+
+        // 2. Fallback: If logged in as WP Admin, allow access
+        if (current_user_can('manage_options')) {
             return true;
         }
 

@@ -1983,6 +1983,9 @@
 
         setupAjax() {
             $.ajaxSetup({
+                xhrFields: {
+                    withCredentials: true
+                },
                 beforeSend: function (xhr) {
                     xhr.setRequestHeader('X-WP-Nonce', svpData.nonce);
                 }
