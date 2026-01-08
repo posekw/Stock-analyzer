@@ -958,14 +958,14 @@
     }
 
     // Helper to navigate from dashboard to analysis sections
-    function navigateToAnalysis(ticker) {
+    function navigateToAnalysis(ticker, section = null) {
         state.ticker = ticker;
         $('#svp-ticker-input').val(ticker);
         $('#svp-hero-ticker').val(ticker);
         updateTickerDisplays();
 
-        // Navigate to AI Analyzer section by default (most popular feature)
-        const targetSection = svpData.options.enable_news_feed ? 'news' : 'technicals';
+        // Navigate to section
+        const targetSection = section || (svpData.options.enable_news_feed ? 'news' : 'technicals');
 
         $('.svp-nav-link').removeClass('active');
         $('.svp-nav-link[data-section="' + targetSection + '"]').addClass('active');
@@ -974,8 +974,10 @@
 
         // Auto-trigger the analysis
         if (targetSection === 'news') {
-            handleFetchAndAnalyze();
-        } else {
+            if (typeof handleFetchAndAnalyze === 'function') {
+                handleFetchAndAnalyze();
+            }
+        } else if (targetSection === 'technicals') {
             fetchTechnicals();
         }
     }
@@ -986,65 +988,95 @@
     let watchlistData = [];
 
     function renderWatchlist() {
-        console.log('SVP Watchlist: renderWatchlist called, data:', watchlistData);
-
-        const container = $('#svp-watchlist-content');
-        const emptyState = $('#svp-watchlist-empty');
-
-        console.log('SVP Watchlist: Container found:', container.length);
-        console.log('SVP Watchlist: Empty state found:', emptyState.length);
-
-        // Clear current content
-        container.empty();
+        const $content = $('#svp-watchlist-content');
+        const $empty = $('#svp-watchlist-empty');
 
         if (!watchlistData || watchlistData.length === 0) {
-            // Show empty state
-            console.log('SVP Watchlist: Showing empty state');
-            emptyState.show();
+            $empty.show();
+            // Keep empty state but remove items
+            $content.find('.svp-watchlist-item').remove();
             return;
         }
 
-        // Hide empty state
-        console.log('SVP Watchlist: Hiding empty state, rendering', watchlistData.length, 'items');
-        emptyState.hide();
+        $empty.hide();
+        $content.find('.svp-watchlist-item').remove();
 
-        // Render each watchlist item
         watchlistData.forEach(function (ticker) {
-            const item = $('<div>')
-                .addClass('svp-watchlist-item')
-                .attr('data-ticker', ticker);
+            const $item = $(`
+                <div class="svp-watchlist-item" data-ticker="${escapeHtml(ticker)}">
+                    <div class="svp-watchlist-row-main">
+                        <div class="svp-watchlist-item-info">
+                            <span class="svp-watchlist-item-ticker">${escapeHtml(ticker)}</span>
+                            <span class="svp-watchlist-item-price">...</span>
+                        </div>
+                        <button class="svp-watchlist-item-remove" title="Remove">✕</button>
+                    </div>
+                    <div class="svp-watchlist-actions" style="display:none;">
+                        <button class="svp-btn-action svp-action-ai">🤖 AI Analyze</button>
+                        <button class="svp-btn-action svp-action-tech">📊 Technicals</button>
+                    </div>
+                </div>
+            `);
 
-            const info = $('<div>').addClass('svp-watchlist-item-info');
-            const tickerLabel = $('<div>')
-                .addClass('svp-watchlist-item-ticker')
-                .text(ticker);
-            const nameLabel = $('<div>')
-                .addClass('svp-watchlist-item-name')
-                .text('Click to analyze');
+            // 1. Fetch Price
+            fetchWatchlistPrice(ticker, $item.find('.svp-watchlist-item-price'));
 
-            info.append(tickerLabel, nameLabel);
+            // 2. Toggle Actions on Row Click
+            $item.find('.svp-watchlist-row-main').on('click', function (e) {
+                if ($(e.target).hasClass('svp-watchlist-item-remove')) return;
 
-            const removeBtn = $('<button>')
-                .addClass('svp-watchlist-item-remove')
-                .html('✕')
-                .attr('title', 'Remove from watchlist')
-                .on('click', function (e) {
-                    e.stopPropagation();
-                    removeFromWatchlist(ticker);
-                });
+                // Toggle this one
+                const actions = $item.find('.svp-watchlist-actions');
+                const wasVisible = actions.is(':visible');
 
-            // Click on item to analyze that ticker
-            item.on('click', function () {
-                $('#svp-ticker-input').val(ticker);
-                loadTickerAndAnalyze(ticker);
-                // Close sidebar on mobile
-                if ($(window).width() < 768) {
-                    $('#svp-watchlist-sidebar').removeClass('open');
+                // Hide all others
+                $('.svp-watchlist-actions').slideUp();
+
+                if (!wasVisible) {
+                    actions.slideDown();
                 }
             });
 
-            item.append(info, removeBtn);
-            container.append(item);
+            // 3. AI Action
+            $item.find('.svp-action-ai').on('click', function (e) {
+                e.stopPropagation();
+                navigateToAnalysis(ticker, 'news');
+                if ($(window).width() < 768) $('#svp-watchlist-sidebar').removeClass('open');
+            });
+
+            // 4. Technicals Action
+            $item.find('.svp-action-tech').on('click', function (e) {
+                e.stopPropagation();
+                navigateToAnalysis(ticker, 'technicals');
+                if ($(window).width() < 768) $('#svp-watchlist-sidebar').removeClass('open');
+            });
+
+            // 5. Remove button
+            $item.find('.svp-watchlist-item-remove').on('click', function (e) {
+                e.stopPropagation();
+                const t = $(this).closest('.svp-watchlist-item').data('ticker');
+                removeFromWatchlist(t);
+            });
+
+            $content.append($item);
+        });
+    }
+
+    function fetchWatchlistPrice(ticker, $el) {
+        $.post(svpData.ajaxUrl, {
+            action: 'svp_get_quote',
+            ticker: ticker,
+            nonce: svpData.nonce
+        }, function (res) {
+            if (res.success && res.data && res.data.price) {
+                const price = parseFloat(res.data.price);
+                $el.text('$' + price.toFixed(2));
+                $el.addClass('loaded');
+            } else {
+                $el.text('---');
+            }
+        }).fail(function () {
+            $el.text('---');
         });
     }
 
@@ -1071,24 +1103,21 @@
 
     function initWatchlist() {
         // Toggle sidebar
-        $('#svp-watchlist-toggle').on('click', function () {
+        $('#svp-watchlist-toggle').off('click').on('click', function () {
             $('#svp-watchlist-sidebar').toggleClass('open');
         });
 
         // Add ticker from watchlist input to watchlist
-        $('#svp-watchlist-add-btn').on('click', function () {
+        $('#svp-watchlist-add-btn').off('click').on('click', function () {
             const input = $('#svp-watchlist-ticker-input');
             let ticker = input.val().toUpperCase().trim();
 
-            console.log('SVP Watchlist: Add button clicked, ticker=', ticker);
-
             if (ticker) {
                 addToWatchlist(ticker);
-                input.val(''); // Clear the input after adding
+                input.val('');
             } else {
-                console.log('SVP Watchlist: No ticker entered');
-                input.focus(); // Focus the input to prompt user to enter ticker
-                input.attr('placeholder', 'Please enter a ticker!');
+                input.focus();
+                input.attr('placeholder', 'Enter ticker!');
                 setTimeout(() => {
                     input.attr('placeholder', 'Enter ticker (e.g., AAPL)');
                 }, 2000);
@@ -1096,7 +1125,7 @@
         });
 
         // Allow Enter key to add ticker
-        $('#svp-watchlist-ticker-input').on('keypress', function (e) {
+        $('#svp-watchlist-ticker-input').off('keypress').on('keypress', function (e) {
             if (e.which === 13) { // Enter key
                 $('#svp-watchlist-add-btn').click();
             }
@@ -1107,25 +1136,15 @@
     }
 
     function loadWatchlist() {
-        // Check if user is logged in using PHP-provided flag OR has JWT token
         const isLoggedIn = (svpData && !!svpData.isLoggedIn) || !!localStorage.getItem('svp_token');
-
-        console.log('SVP Watchlist: Checking auth...', {
-            'svpData exists': !!svpData,
-            'svpData.isLoggedIn': svpData ? svpData.isLoggedIn : 'N/A',
-            'Has JWT token': !!localStorage.getItem('svp_token'),
-            'Final isLoggedIn': isLoggedIn
-        });
 
         if (!isLoggedIn) {
             $('#svp-watchlist-content').hide();
             $('#svp-watchlist-login').show();
             $('#svp-watchlist-add-btn').hide();
-            console.log('SVP Watchlist: User not logged in, showing login prompt');
             return;
         }
 
-        console.log('SVP Watchlist: User logged in, loading watchlist...');
         $('#svp-watchlist-content').show();
         $('#svp-watchlist-login').hide();
         $('#svp-watchlist-add-btn').show();
@@ -1142,17 +1161,10 @@
                 if (response.success && response.data.watchlist) {
                     watchlistData = response.data.watchlist;
                     renderWatchlist();
-                    console.log('SVP Watchlist: Loaded', watchlistData.length, 'items');
-                } else {
-                    console.log('SVP Watchlist: Failed to load', response);
                 }
-            },
-            error: function (xhr, status, error) {
-                console.error('SVP Watchlist: Error loading watchlist', error);
             }
         };
 
-        // Add Authorization header if JWT token exists
         if (token) {
             ajaxConfig.headers = { 'Authorization': 'Bearer ' + token };
         }
@@ -1172,92 +1184,17 @@
                 _ajax_nonce: svpData.nonce
             },
             success: function (response) {
-                console.log('SVP Watchlist: Add response:', response);
                 if (response.success && response.data.watchlist) {
-                    console.log('SVP Watchlist: Add successful, watchlist:', response.data.watchlist);
                     watchlistData = response.data.watchlist;
                     renderWatchlist();
-                    // Open the sidebar to show the added item
                     $('#svp-watchlist-sidebar').addClass('open');
-                } else {
-                    console.log('SVP Watchlist: Add failed or no watchlist in response');
-                    if (response.data && response.data.message) {
-                        alert(response.data.message);
-                    }
+                } else if (response.data && response.data.message) {
+                    alert(response.data.message);
                 }
-            },
-            error: function (xhr, status, error) {
-                console.error('SVP Watchlist: Failed to add to watchlist', error);
-                console.error('SVP Watchlist: XHR:', xhr);
             }
         };
 
         $.ajax(ajaxConfig);
-    }
-
-    function removeFromWatchlist(ticker) {
-        const ajaxConfig = {
-            url: svpData.ajaxUrl,
-            type: 'POST',
-            data: {
-                action: 'svp_remove_from_watchlist',
-                ticker: ticker,
-                _ajax_nonce: svpData.nonce
-            },
-            success: function (response) {
-                if (response.success && response.data.watchlist) {
-                    watchlistData = response.data.watchlist;
-                    renderWatchlist();
-                }
-            },
-            error: function () {
-                console.log('Failed to remove from watchlist');
-            }
-        };
-
-        $.ajax(ajaxConfig);
-    }
-
-    function renderWatchlist() {
-        const $content = $('#svp-watchlist-content');
-        const $empty = $('#svp-watchlist-empty');
-
-        if (watchlistData.length === 0) {
-            $empty.show();
-            $content.find('.svp-watchlist-item').remove();
-            return;
-        }
-
-        $empty.hide();
-        $content.find('.svp-watchlist-item').remove();
-
-        watchlistData.forEach(function (ticker) {
-            const $item = $(`
-                <div class="svp-watchlist-item" data-ticker="${escapeHtml(ticker)}">
-                    <div class="svp-watchlist-item-info">
-                        <span class="svp-watchlist-item-ticker">${escapeHtml(ticker)}</span>
-                    </div>
-                    <button class="svp-watchlist-item-remove" title="Remove">✕</button>
-                </div>
-            `);
-
-            // Click to analyze
-            $item.on('click', function (e) {
-                if (!$(e.target).hasClass('svp-watchlist-item-remove')) {
-                    const t = $(this).data('ticker');
-                    navigateToAnalysis(t);
-                }
-            });
-
-            // Remove button
-            $item.find('.svp-watchlist-item-remove').on('click', function (e) {
-                e.stopPropagation();
-                const t = $(this).closest('.svp-watchlist-item').data('ticker');
-                removeFromWatchlist(t);
-            });
-
-            $content.append($item);
-        });
     }
 
     // Timeframe buttons

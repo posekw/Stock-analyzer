@@ -3974,3 +3974,93 @@ main {
         font-size: 18px;
     }
 }
+
+/* Watchlist Price & Actions */
+.svp-watchlist-row-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    cursor: pointer;
+    padding: 8px 0;
+}
+
+.svp-watchlist-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.svp-watchlist-item-ticker {
+    font-weight: 700;
+    color: var(--svp-text-white);
+    font-size: 14px;
+}
+
+.svp-watchlist-item-price {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--svp-text-zinc-400);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.svp-watchlist-item-price.loaded {
+    color: var(--svp-emerald-400);
+}
+
+.svp-watchlist-actions {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--svp-border-zinc-800);
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.svp-btn-action {
+    flex: 1;
+    padding: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 6px;
+    background: var(--svp-bg-zinc-800);
+    color: var(--svp-text-zinc-300);
+    border: 1px solid var(--svp-border-zinc-700);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.svp-btn-action:hover {
+    background: var(--svp-bg-zinc-700);
+    color: var(--svp-text-white);
+}
+
+.svp-action-ai:hover {
+    border-color: var(--svp-purple-500);
+    color: var(--svp-purple-400);
+    background: rgba(168, 85, 247, 0.1);
+}
+
+.svp-action-tech:hover {
+    border-color: var(--svp-emerald-500);
+    color: var(--svp-emerald-400);
+    background: rgba(16, 185, 129, 0.1);
+}
