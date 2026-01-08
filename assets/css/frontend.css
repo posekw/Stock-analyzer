@@ -4064,12 +4064,12 @@ main {
 
 .svp-watchlist-actions {
     margin-top: 0;
-    /* Remove negative margin to fix stacking */
     display: flex;
+    flex-direction: column;
+    /* Stack buttons vertically */
     gap: 6px;
     padding: 10px;
     background: var(--svp-bg-zinc-950);
-    /* Darker background for contrast */
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
     border: 1px solid var(--svp-border-zinc-800);
