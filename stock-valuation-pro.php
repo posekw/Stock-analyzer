@@ -819,7 +819,7 @@ class StockValuationPro
     /**
      * Check API Permission
      * 
-     * Uses the custom SVP_Auth system to validate requests
+     * Allows access to logged-in users (WordPress or custom auth)
      */
     public function check_api_permission($request)
     {
@@ -828,7 +828,12 @@ class StockValuationPro
             return true;
         }
 
-        // 2. Fallback: If logged in as WP Admin, allow access
+        // 2. Check if logged in as WordPress user (any user, not just admins)
+        if (is_user_logged_in()) {
+            return true;
+        }
+
+        // 3. Fallback: If logged in as WP Admin, allow access
         if (current_user_can('manage_options')) {
             return true;
         }
