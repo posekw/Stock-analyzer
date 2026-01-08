@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('SVP_VERSION', '1.1.3');
+define('SVP_VERSION', '1.1.4');
 define('SVP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SVP_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SVP_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -1449,13 +1449,48 @@ NEWS:
     }
 
     /**
+     * Get current user ID (supports both WordPress auth and JWT)
+     */
+    private function get_authenticated_user_id()
+    {
+        // First check WordPress session
+        $user_id = get_current_user_id();
+        if ($user_id) {
+            return $user_id;
+        }
+
+        // Check JWT token in Authorization header
+        $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? $_SERVER['HTTP_AUTHORIZATION'] : '';
+        if (empty($auth_header) && function_exists('apache_request_headers')) {
+            $headers = apache_request_headers();
+            $auth_header = isset($headers['Authorization']) ? $headers['Authorization'] : '';
+        }
+
+        if ($auth_header) {
+            list($token) = sscanf($auth_header, 'Bearer %s');
+            if ($token) {
+                require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
+                $jwt = new SVP_JWT_Handler();
+                $decoded = $jwt->decode($token);
+                if ($decoded && isset($decoded->data->user_id)) {
+                    // Set current user for this request
+                    wp_set_current_user($decoded->data->user_id);
+                    return $decoded->data->user_id;
+                }
+            }
+        }
+
+        return 0;
+    }
+
+    /**
      * AJAX: Get User Watchlist
      */
     public function ajax_get_watchlist()
     {
         check_ajax_referer('svp_nonce', '_ajax_nonce');
 
-        $user_id = get_current_user_id();
+        $user_id = $this->get_authenticated_user_id();
         if (!$user_id) {
             wp_send_json_error('Not logged in');
         }
@@ -1479,7 +1514,7 @@ NEWS:
 
         check_ajax_referer('svp_nonce', '_ajax_nonce');
 
-        $user_id = get_current_user_id();
+        $user_id = $this->get_authenticated_user_id();
         if (!$user_id) {
             wp_send_json_error('Not logged in');
         }
@@ -1510,7 +1545,7 @@ NEWS:
     {
         check_ajax_referer('svp_nonce', '_ajax_nonce');
 
-        $user_id = get_current_user_id();
+        $user_id = $this->get_authenticated_user_id();
         if (!$user_id) {
             wp_send_json_error('Not logged in');
         }

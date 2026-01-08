@@ -1130,7 +1130,8 @@
         $('#svp-watchlist-login').hide();
         $('#svp-watchlist-add-btn').show();
 
-        $.ajax({
+        const token = localStorage.getItem('svp_token');
+        const ajaxConfig = {
             url: svpData.ajaxUrl,
             type: 'POST',
             data: {
@@ -1149,13 +1150,21 @@
             error: function (xhr, status, error) {
                 console.error('SVP Watchlist: Error loading watchlist', error);
             }
-        });
+        };
+
+        // Add Authorization header if JWT token exists
+        if (token) {
+            ajaxConfig.headers = { 'Authorization': 'Bearer ' + token };
+        }
+
+        $.ajax(ajaxConfig);
     }
 
     function addToWatchlist(ticker) {
         if (!ticker) return;
 
-        $.ajax({
+        const token = localStorage.getItem('svp_token');
+        const ajaxConfig = {
             url: svpData.ajaxUrl,
             type: 'POST',
             data: {
@@ -1179,11 +1188,19 @@
                 console.error('SVP Watchlist: Failed to add to watchlist', error);
                 console.error('SVP Watchlist: XHR:', xhr);
             }
-        });
+        };
+
+        // Add Authorization header if JWT token exists
+        if (token) {
+            ajaxConfig.headers = { 'Authorization': 'Bearer ' + token };
+        }
+
+        $.ajax(ajaxConfig);
     }
 
     function removeFromWatchlist(ticker) {
-        $.ajax({
+        const token = localStorage.getItem('svp_token');
+        const ajaxConfig = {
             url: svpData.ajaxUrl,
             type: 'POST',
             data: {
@@ -1200,7 +1217,14 @@
             error: function () {
                 console.log('Failed to remove from watchlist');
             }
-        });
+        };
+
+        // Add Authorization header if JWT token exists
+        if (token) {
+            ajaxConfig.headers = { 'Authorization': 'Bearer ' + token };
+        }
+
+        $.ajax(ajaxConfig);
     }
 
     function renderWatchlist() {
