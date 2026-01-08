@@ -3975,52 +3975,101 @@ main {
     }
 }
 
-/* Watchlist Price & Actions */
+/* Watchlist Premium Styles */
 .svp-watchlist-row-main {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
     cursor: pointer;
-    padding: 8px 0;
+    padding: 12px 14px;
+    background: var(--svp-bg-zinc-900);
+    border: 1px solid var(--svp-border-zinc-800);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.svp-watchlist-row-main:hover {
+    background: var(--svp-bg-zinc-800);
+    border-color: var(--svp-border-zinc-700);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.svp-watchlist-item {
+    margin-bottom: 8px;
 }
 
 .svp-watchlist-item-info {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    flex-direction: row;
+    /* Horizontal layout */
+    align-items: center;
+    gap: 12px;
+    flex-grow: 1;
 }
 
 .svp-watchlist-item-ticker {
     font-weight: 700;
     color: var(--svp-text-white);
-    font-size: 14px;
+    font-size: 15px;
+    min-width: 60px;
+    /* Align prices */
 }
 
 .svp-watchlist-item-price {
-    font-size: 12px;
-    font-weight: 500;
+    font-size: 14px;
+    font-weight: 600;
     color: var(--svp-text-zinc-400);
     font-family: 'JetBrains Mono', monospace;
+    background: var(--svp-bg-zinc-950);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--svp-border-zinc-800);
 }
 
 .svp-watchlist-item-price.loaded {
     color: var(--svp-emerald-400);
+    border-color: rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.05);
+}
+
+.svp-watchlist-item-remove {
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: var(--svp-text-zinc-500);
+    padding: 4px;
+}
+
+.svp-watchlist-row-main:hover .svp-watchlist-item-remove {
+    opacity: 1;
+}
+
+.svp-watchlist-item-remove:hover {
+    color: var(--svp-red-400);
+    background: rgba(248, 113, 113, 0.1);
+    border-radius: 4px;
 }
 
 .svp-watchlist-actions {
-    margin-top: 8px;
+    margin-top: -4px;
+    /* Slight overlap effect */
     display: flex;
     gap: 8px;
-    padding-top: 10px;
-    border-top: 1px solid var(--svp-border-zinc-800);
-    animation: fadeIn 0.2s ease-out;
+    padding: 12px;
+    background: var(--svp-bg-zinc-900);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border: 1px solid var(--svp-border-zinc-800);
+    border-top: none;
+    margin-bottom: 12px;
+    animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes fadeIn {
+@keyframes slideDown {
     from {
         opacity: 0;
-        transform: translateY(-5px);
+        transform: translateY(-8px);
     }
 
     to {
@@ -4031,8 +4080,8 @@ main {
 
 .svp-btn-action {
     flex: 1;
-    padding: 8px;
-    font-size: 11px;
+    padding: 8px 12px;
+    font-size: 12px;
     font-weight: 600;
     border-radius: 6px;
     background: var(--svp-bg-zinc-800);
@@ -4043,24 +4092,27 @@ main {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
 }
 
 .svp-btn-action:hover {
     background: var(--svp-bg-zinc-700);
     color: var(--svp-text-white);
+    transform: translateY(-1px);
 }
 
 .svp-action-ai:hover {
     border-color: var(--svp-purple-500);
     color: var(--svp-purple-400);
     background: rgba(168, 85, 247, 0.1);
+    box-shadow: 0 4px 12px rgba(168, 85, 247, 0.1);
 }
 
 .svp-action-tech:hover {
     border-color: var(--svp-emerald-500);
     color: var(--svp-emerald-400);
     background: rgba(16, 185, 129, 0.1);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
 }
