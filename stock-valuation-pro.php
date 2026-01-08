@@ -153,11 +153,53 @@ class StockValuationPro
     {
         load_plugin_textdomain('stock-valuation-pro', false, dirname(SVP_PLUGIN_BASENAME) . '/languages');
 
-        // Self-repair: Ensure DB tables exist if they haven't been installed yet
-        if (false === get_option('svp_db_version')) {
-            require_once SVP_PLUGIN_DIR . 'includes/class-svp-install.php';
-            SVP_Install::install();
+        // Always ensure DB tables and columns are up to date
+        require_once SVP_PLUGIN_DIR . 'includes/class-svp-install.php';
+        SVP_Install::install();
+    }
+
+    /**
+     * Enqueue frontend assets
+     */
+    public function enqueue_frontend_assets()
+    {
+        // ... (existing code) ...
+    }
+
+    // ... (skip lines) ...
+
+    /**
+     * Handle User Settings REST API
+     */
+    public function rest_user_settings($request)
+    {
+        $user_id = $this->get_authenticated_user_id();
+
+        if (!$user_id) {
+            return new WP_Error('unauthorized', 'User not logged in', array('status' => 401));
         }
+
+        if ($request->get_method() === 'POST') {
+            $params = $request->get_params();
+            $api_key = isset($params['gemini_api_key']) ? sanitize_text_field($params['gemini_api_key']) : '';
+
+            // Update using custom SVP Auth method
+            $this->auth->update_api_key($user_id, $api_key);
+
+            return rest_ensure_response(array('success' => true));
+        }
+
+        // GET request
+        // Get using custom SVP Auth method
+        $api_key = $this->auth->get_api_key($user_id);
+        $has_key = !empty($api_key);
+        $masked_key = $has_key ? '********' . substr($api_key, -4) : '';
+
+        return rest_ensure_response(array(
+            'has_gemini_key' => $has_key,
+            'gemini_api_key' => $api_key,
+            'gemini_api_key_masked' => $masked_key
+        ));
     }
 
     /**

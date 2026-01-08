@@ -33,6 +33,7 @@ class SVP_Install
             username varchar(60) NOT NULL,
             email varchar(100) NOT NULL,
             password_hash varchar(255) NOT NULL,
+            gemini_api_key text DEFAULT NULL,
             created_at datetime NOT NULL,
             last_login datetime DEFAULT NULL,
             is_banned tinyint(1) DEFAULT 0,

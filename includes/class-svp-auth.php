@@ -208,4 +208,31 @@ class SVP_Auth
     {
         return $this->get_current_user_id() !== null;
     }
+    /**
+     * Get user Gemini API key
+     */
+    public function get_api_key($user_id)
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'svp_users';
+        return $wpdb->get_var($wpdb->prepare("SELECT gemini_api_key FROM $table WHERE id = %d", $user_id));
+    }
+
+    /**
+     * Update user Gemini API key
+     */
+    public function update_api_key($user_id, $key)
+    {
+        global $wpdb;
+        $table = $wpdb->prefix . 'svp_users';
+        $key = sanitize_text_field($key);
+
+        return $wpdb->update(
+            $table,
+            array('gemini_api_key' => $key),
+            array('id' => $user_id),
+            array('%s'),
+            array('%d')
+        );
+    }
 }
