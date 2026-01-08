@@ -1453,7 +1453,7 @@ NEWS:
      */
     public function ajax_get_watchlist()
     {
-        check_ajax_referer('svp_nonce');
+        check_ajax_referer('svp_nonce', '_ajax_nonce');
 
         $user_id = get_current_user_id();
         if (!$user_id) {
@@ -1473,7 +1473,7 @@ NEWS:
      */
     public function ajax_add_to_watchlist()
     {
-        check_ajax_referer('svp_nonce');
+        check_ajax_referer('svp_nonce', '_ajax_nonce');
 
         $user_id = get_current_user_id();
         if (!$user_id) {
@@ -1504,7 +1504,7 @@ NEWS:
      */
     public function ajax_remove_from_watchlist()
     {
-        check_ajax_referer('svp_nonce');
+        check_ajax_referer('svp_nonce', '_ajax_nonce');
 
         $user_id = get_current_user_id();
         if (!$user_id) {
