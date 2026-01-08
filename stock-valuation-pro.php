@@ -225,9 +225,9 @@ class StockValuationPro
             'options' => $this->get_public_options(),
             'geminiApiKey' => isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '',
             'homeUrl' => home_url(),
-            'isLoggedIn' => is_user_logged_in(),
-            'userId' => get_current_user_id(),
-            'displayName' => is_user_logged_in() ? wp_get_current_user()->display_name : '',
+            'isLoggedIn' => $this->auth->is_logged_in(),
+            'userId' => $this->auth->get_current_user_id(),
+            'displayName' => $this->auth->is_logged_in() ? $this->auth->get_current_user()->username : '',
             'logoutUrl' => wp_logout_url(home_url()),
         ));
     }
