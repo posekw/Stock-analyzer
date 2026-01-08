@@ -985,6 +985,83 @@
     // ========================================
     let watchlistData = [];
 
+    function renderWatchlist() {
+        const container = $('#svp-watchlist-content');
+        const emptyState = $('#svp-watchlist-empty');
+
+        // Clear current content
+        container.empty();
+
+        if (!watchlistData || watchlistData.length === 0) {
+            // Show empty state
+            emptyState.show();
+            return;
+        }
+
+        // Hide empty state
+        emptyState.hide();
+
+        // Render each watchlist item
+        watchlistData.forEach(function (ticker) {
+            const item = $('<div>')
+                .addClass('svp-watchlist-item')
+                .attr('data-ticker', ticker);
+
+            const info = $('<div>').addClass('svp-watchlist-item-info');
+            const tickerLabel = $('<div>')
+                .addClass('svp-watchlist-item-ticker')
+                .text(ticker);
+            const nameLabel = $('<div>')
+                .addClass('svp-watchlist-item-name')
+                .text('Click to analyze');
+
+            info.append(tickerLabel, nameLabel);
+
+            const removeBtn = $('<button>')
+                .addClass('svp-watchlist-item-remove')
+                .html('✕')
+                .attr('title', 'Remove from watchlist')
+                .on('click', function (e) {
+                    e.stopPropagation();
+                    removeFromWatchlist(ticker);
+                });
+
+            // Click on item to analyze that ticker
+            item.on('click', function () {
+                $('#svp-ticker-input').val(ticker);
+                loadTickerAndAnalyze(ticker);
+                // Close sidebar on mobile
+                if ($(window).width() < 768) {
+                    $('#svp-watchlist-sidebar').removeClass('open');
+                }
+            });
+
+            item.append(info, removeBtn);
+            container.append(item);
+        });
+    }
+
+    function removeFromWatchlist(ticker) {
+        $.ajax({
+            url: svpData.ajaxUrl,
+            type: 'POST',
+            data: {
+                action: 'svp_remove_from_watchlist',
+                ticker: ticker,
+                _ajax_nonce: svpData.nonce
+            },
+            success: function (response) {
+                if (response.success && response.data.watchlist) {
+                    watchlistData = response.data.watchlist;
+                    renderWatchlist();
+                }
+            },
+            error: function () {
+                console.log('Failed to remove from watchlist');
+            }
+        });
+    }
+
     function initWatchlist() {
         // Toggle sidebar
         $('#svp-watchlist-toggle').on('click', function () {
