@@ -100,6 +100,19 @@ if (!defined('ABSPATH')) {
                 </div>
                 <button class="svp-copy-btn">Copy</button>
             </li>
+
+            <!-- Authentication Form -->
+            <li>
+                <code class="shortcode-code">[stock_auth]</code>
+                <div class="shortcode-desc">
+                    <h4>User Authentication Form</h4>
+                    <p>Displays a login form for guest users and a welcome dashboard with logout button for logged-in
+                        users.</p>
+                    <p><strong>Attributes:</strong> None</p>
+                    <p><strong>Example:</strong> <code>[stock_auth]</code></p>
+                </div>
+                <button class="svp-copy-btn">Copy</button>
+            </li>
         </ul>
     </div>
 
@@ -126,6 +139,7 @@ if (!defined('ABSPATH')) {
                 onclick="navigator.clipboard.writeText('[stock_technicals]')">[stock_technicals]</button>
             <button class="button" onclick="navigator.clipboard.writeText('[stock_relative]')">[stock_relative]</button>
             <button class="button" onclick="navigator.clipboard.writeText('[stock_news]')">[stock_news]</button>
+            <button class="button" onclick="navigator.clipboard.writeText('[stock_auth]')">[stock_auth]</button>
         </div>
     </div>
 </div>
