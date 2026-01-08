@@ -1332,7 +1332,7 @@ NEWS:
      */
     private function get_authenticated_user_id()
     {
-        return get_current_user_id();
+        return $this->auth->get_current_user_id();
     }
 
     /**
@@ -1347,12 +1347,11 @@ NEWS:
             wp_send_json_error('Not logged in');
         }
 
-        $watchlist = get_user_meta($user_id, 'svp_watchlist', true);
-        if (!is_array($watchlist)) {
-            $watchlist = array();
-        }
+        global $wpdb;
+        $table = $wpdb->prefix . 'svp_watchlist';
+        $results = $wpdb->get_col($wpdb->prepare("SELECT ticker FROM $table WHERE user_id = %d", $user_id));
 
-        wp_send_json_success(array('watchlist' => $watchlist));
+        wp_send_json_success(array('watchlist' => $results ? $results : array()));
     }
 
     /**
@@ -1360,28 +1359,12 @@ NEWS:
      */
     public function ajax_add_to_watchlist()
     {
-        // Debug: Log what we're receiving
-        error_log('SVP Watchlist Add - POST data: ' . print_r($_POST, true));
-        error_log('SVP Watchlist Add - Nonce from POST: ' . ($_POST['_ajax_nonce'] ?? 'NOT SET'));
-
         check_ajax_referer('svp_nonce', '_ajax_nonce');
 
         $user_id = $this->get_authenticated_user_id();
 
-        // DEBUG: Return authentication info
-        $wp_user_id = get_current_user_id();
-        $debug_info = array(
-            'wp_user_id' => $wp_user_id,
-            'auth_user_id' => $user_id,
-            'is_user_logged_in' => is_user_logged_in(),
-            'has_jwt_header' => isset($_SERVER['HTTP_AUTHORIZATION']) ? 'yes' : 'no'
-        );
-
         if (!$user_id) {
-            wp_send_json_error(array(
-                'message' => 'Not logged in',
-                'debug' => $debug_info
-            ));
+            wp_send_json_error('Not logged in');
         }
 
         $ticker = strtoupper(sanitize_text_field($_POST['ticker'] ?? ''));
@@ -1389,18 +1372,23 @@ NEWS:
             wp_send_json_error('Invalid ticker');
         }
 
-        $watchlist = get_user_meta($user_id, 'svp_watchlist', true);
-        if (!is_array($watchlist)) {
-            $watchlist = array();
+        global $wpdb;
+        $table = $wpdb->prefix . 'svp_watchlist';
+
+        // Check if exists
+        $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE user_id = %d AND ticker = %s", $user_id, $ticker));
+
+        if (!$exists) {
+            $wpdb->insert(
+                $table,
+                array('user_id' => $user_id, 'ticker' => $ticker, 'added_at' => current_time('mysql')),
+                array('%d', '%s', '%s')
+            );
         }
 
-        // Add ticker if not already in watchlist
-        if (!in_array($ticker, $watchlist)) {
-            $watchlist[] = $ticker;
-            update_user_meta($user_id, 'svp_watchlist', $watchlist);
-        }
-
-        wp_send_json_success(array('watchlist' => $watchlist, 'debug' => $debug_info));
+        // Return updated list
+        $watchlist = $wpdb->get_col($wpdb->prepare("SELECT ticker FROM $table WHERE user_id = %d", $user_id));
+        wp_send_json_success(array('watchlist' => $watchlist ? $watchlist : array()));
     }
 
     /**
@@ -1420,16 +1408,13 @@ NEWS:
             wp_send_json_error('Invalid ticker');
         }
 
-        $watchlist = get_user_meta($user_id, 'svp_watchlist', true);
-        if (!is_array($watchlist)) {
-            $watchlist = array();
-        }
+        global $wpdb;
+        $table = $wpdb->prefix . 'svp_watchlist';
+        $wpdb->delete($table, array('user_id' => $user_id, 'ticker' => $ticker), array('%d', '%s'));
 
-        // Remove ticker from watchlist
-        $watchlist = array_values(array_diff($watchlist, array($ticker)));
-        update_user_meta($user_id, 'svp_watchlist', $watchlist);
-
-        wp_send_json_success(array('watchlist' => $watchlist));
+        // Return updated list
+        $watchlist = $wpdb->get_col($wpdb->prepare("SELECT ticker FROM $table WHERE user_id = %d", $user_id));
+        wp_send_json_success(array('watchlist' => $watchlist ? $watchlist : array()));
     }
 
     private function discover_gemini_models($apiKey)

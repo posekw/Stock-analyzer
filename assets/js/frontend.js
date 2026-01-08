@@ -2238,7 +2238,12 @@
         }
 
         logout() {
-            window.location.href = svpData.logoutUrl;
+            $.post(svpData.ajaxUrl, {
+                action: 'svp_logout_user',
+                nonce: svpData.nonce
+            }).always(() => {
+                window.location.href = svpData.homeUrl + '/stock/';
+            });
         }
 
         setLoading(btn, isLoading) {
