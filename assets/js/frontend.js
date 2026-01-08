@@ -986,19 +986,26 @@
     let watchlistData = [];
 
     function renderWatchlist() {
+        console.log('SVP Watchlist: renderWatchlist called, data:', watchlistData);
+
         const container = $('#svp-watchlist-content');
         const emptyState = $('#svp-watchlist-empty');
+
+        console.log('SVP Watchlist: Container found:', container.length);
+        console.log('SVP Watchlist: Empty state found:', emptyState.length);
 
         // Clear current content
         container.empty();
 
         if (!watchlistData || watchlistData.length === 0) {
             // Show empty state
+            console.log('SVP Watchlist: Showing empty state');
             emptyState.show();
             return;
         }
 
         // Hide empty state
+        console.log('SVP Watchlist: Hiding empty state, rendering', watchlistData.length, 'items');
         emptyState.hide();
 
         // Render each watchlist item
@@ -1157,15 +1164,20 @@
                 _ajax_nonce: svpData.nonce
             },
             success: function (response) {
+                console.log('SVP Watchlist: Add response:', response);
                 if (response.success && response.data.watchlist) {
+                    console.log('SVP Watchlist: Add successful, watchlist:', response.data.watchlist);
                     watchlistData = response.data.watchlist;
                     renderWatchlist();
                     // Open the sidebar to show the added item
                     $('#svp-watchlist-sidebar').addClass('open');
+                } else {
+                    console.log('SVP Watchlist: Add failed or no watchlist in response');
                 }
             },
-            error: function () {
-                console.log('Failed to add to watchlist');
+            error: function (xhr, status, error) {
+                console.error('SVP Watchlist: Failed to add to watchlist', error);
+                console.error('SVP Watchlist: XHR:', xhr);
             }
         });
     }
