@@ -1006,16 +1006,25 @@
     }
 
     function loadWatchlist() {
-        // Check if user is logged in using PHP-provided flag
-        const isLoggedIn = svpData && svpData.isLoggedIn;
+        // Check if user is logged in using PHP-provided flag OR has JWT token
+        const isLoggedIn = (svpData && svpData.isLoggedIn === true) || localStorage.getItem('svp_token');
+
+        console.log('SVP Watchlist: Checking auth...', {
+            'svpData exists': !!svpData,
+            'svpData.isLoggedIn': svpData ? svpData.isLoggedIn : 'N/A',
+            'Has JWT token': !!localStorage.getItem('svp_token'),
+            'Final isLoggedIn': isLoggedIn
+        });
 
         if (!isLoggedIn) {
             $('#svp-watchlist-content').hide();
             $('#svp-watchlist-login').show();
             $('#svp-watchlist-add-btn').hide();
+            console.log('SVP Watchlist: User not logged in, showing login prompt');
             return;
         }
 
+        console.log('SVP Watchlist: User logged in, loading watchlist...');
         $('#svp-watchlist-content').show();
         $('#svp-watchlist-login').hide();
         $('#svp-watchlist-add-btn').show();
@@ -1031,10 +1040,13 @@
                 if (response.success && response.data.watchlist) {
                     watchlistData = response.data.watchlist;
                     renderWatchlist();
+                    console.log('SVP Watchlist: Loaded', watchlistData.length, 'items');
+                } else {
+                    console.log('SVP Watchlist: Failed to load', response);
                 }
             },
-            error: function () {
-                console.log('Failed to load watchlist');
+            error: function (xhr, status, error) {
+                console.error('SVP Watchlist: Error loading watchlist', error);
             }
         });
     }
