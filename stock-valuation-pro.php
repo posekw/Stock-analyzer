@@ -60,6 +60,10 @@ class StockValuationPro
         $this->options = get_option('svp_options', $this->get_default_options());
         $this->auth = new SVP_Auth();
 
+        // Initialize user settings manager with auth instance
+        new SVP_User_Settings($this->auth);
+
+
         // Initialize hooks
         add_action('init', array($this, 'init'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
