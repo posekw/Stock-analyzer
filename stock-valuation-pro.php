@@ -149,6 +149,12 @@ class StockValuationPro
     public function init()
     {
         load_plugin_textdomain('stock-valuation-pro', false, dirname(SVP_PLUGIN_BASENAME) . '/languages');
+
+        // Self-repair: Ensure DB tables exist if they haven't been installed yet
+        if (false === get_option('svp_db_version')) {
+            require_once SVP_PLUGIN_DIR . 'includes/class-svp-install.php';
+            SVP_Install::install();
+        }
     }
 
     /**
