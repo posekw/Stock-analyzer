@@ -3718,8 +3718,7 @@ main {
     border: 1px solid var(--svp-bg-zinc-800);
     border-right: none;
     border-radius: 16px 0 0 16px;
-    width: 320px;
-    /* Increased width */
+    width: 360px;
     max-height: 70vh;
     display: flex;
     flex-direction: column;
