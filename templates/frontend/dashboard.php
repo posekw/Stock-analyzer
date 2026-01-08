@@ -90,10 +90,18 @@ $active_section = 'dashboard';
         </button>
         <div class="svp-watchlist-panel" id="svp-watchlist-panel">
             <div class="svp-watchlist-header">
-                <h3>📋 My Watchlist</h3>
-                <button class="svp-watchlist-add" id="svp-watchlist-add-btn" title="Add Current Ticker">
-                    <span>➕</span>
-                </button>
+                <h3>📊 My Watchlist</h3>
+            </div>
+
+            <!-- Add to Watchlist Input -->
+            <div class="svp-watchlist-add-section" id="svp-watchlist-add-section">
+                <div class="svp-watchlist-input-group">
+                    <input type="text" id="svp-watchlist-ticker-input" class="svp-watchlist-input"
+                        placeholder="Enter ticker (e.g., AAPL)" maxlength="10">
+                    <button class="svp-watchlist-add-btn" id="svp-watchlist-add-btn" title="Add to watchlist">
+                        <span>➕</span>
+                    </button>
+                </div>
             </div>
             <div class="svp-watchlist-content" id="svp-watchlist-content">
                 <!-- Watchlist items will be rendered here by JavaScript -->

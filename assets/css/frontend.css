@@ -3750,6 +3750,70 @@ main {
     color: var(--svp-text-zinc-100);
 }
 
+/* Watchlist Add Section */
+.svp-watchlist-add-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--svp-bg-zinc-800);
+}
+
+.svp-watchlist-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.svp-watchlist-input {
+    flex: 1;
+    background: rgba(39, 39, 42, 0.6);
+    border: 1px solid var(--svp-bg-zinc-700);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--svp-text-zinc-100);
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.svp-watchlist-input::placeholder {
+    color: var(--svp-text-zinc-500);
+    text-transform: none;
+    font-weight: 400;
+}
+
+.svp-watchlist-input:focus {
+    background: rgba(39, 39, 42, 0.9);
+    border-color: var(--svp-emerald-500);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.svp-watchlist-add-btn {
+    background: linear-gradient(135deg, var(--svp-emerald-600), var(--svp-emerald-500));
+    border: none;
+    border-radius: 8px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.svp-watchlist-add-btn:hover {
+    background: linear-gradient(135deg, var(--svp-emerald-500), var(--svp-emerald-400));
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.svp-watchlist-add-btn:active {
+    transform: scale(0.95);
+}
+
 .svp-watchlist-add {
     background: rgba(16, 185, 129, 0.2);
     border: 1px solid var(--svp-emerald-500);

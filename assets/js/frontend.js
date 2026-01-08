@@ -991,26 +991,30 @@
             $('#svp-watchlist-sidebar').toggleClass('open');
         });
 
-        // Add current ticker to watchlist
+        // Add ticker from watchlist input to watchlist
         $('#svp-watchlist-add-btn').on('click', function () {
-            let ticker = state.ticker || $('#svp-ticker-input').val().toUpperCase().trim();
-            console.log('SVP Watchlist: Add button clicked, ticker=', ticker);
+            const input = $('#svp-watchlist-ticker-input');
+            let ticker = input.val().toUpperCase().trim();
 
-            // If no ticker, prompt the user to enter one
-            if (!ticker) {
-                ticker = prompt('Enter stock ticker symbol to add to watchlist:');
-                if (!ticker) {
-                    console.log('SVP Watchlist: User cancelled ticker entry');
-                    return;
-                }
-                ticker = ticker.toUpperCase().trim();
-            }
+            console.log('SVP Watchlist: Add button clicked, ticker=', ticker);
 
             if (ticker) {
                 addToWatchlist(ticker);
+                input.val(''); // Clear the input after adding
             } else {
-                console.log('SVP Watchlist: No valid ticker to add');
-                alert('Please enter a valid stock ticker');
+                console.log('SVP Watchlist: No ticker entered');
+                input.focus(); // Focus the input to prompt user to enter ticker
+                input.attr('placeholder', 'Please enter a ticker!');
+                setTimeout(() => {
+                    input.attr('placeholder', 'Enter ticker (e.g., AAPL)');
+                }, 2000);
+            }
+        });
+
+        // Allow Enter key to add ticker
+        $('#svp-watchlist-ticker-input').on('keypress', function (e) {
+            if (e.which === 13) { // Enter key
+                $('#svp-watchlist-add-btn').click();
             }
         });
 
