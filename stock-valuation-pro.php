@@ -107,7 +107,7 @@ class StockValuationPro
         add_action('wp_ajax_nopriv_svp_register_user', array($this, 'ajax_register_user'));
 
         // Security: Hide Admin Bar & Restrict Access
-        add_action('after_setup_theme', array($this, 'remove_admin_bar'));
+        add_action('init', array($this, 'remove_admin_bar'));
         add_action('admin_init', array($this, 'restrict_admin_access'));
     }
 
@@ -1544,8 +1544,8 @@ NEWS:
      */
     public function remove_admin_bar()
     {
-        if (!current_user_can('manage_options')) {
-            show_admin_bar(false);
+        if (!current_user_can('manage_options') && !is_admin()) {
+            add_filter('show_admin_bar', '__return_false');
         }
     }
 
