@@ -2161,7 +2161,7 @@
 
                 if (response.success) {
                     msg.addClass('success').text('Login successful! Redirecting...');
-                    window.location.reload();
+                    window.location.href = svpData.homeUrl + '/stock/';
                 } else {
                     throw new Error(response.data.message || 'Login failed');
                 }
@@ -2200,7 +2200,7 @@
 
                 if (response.success) {
                     msg.addClass('success').text('Registration successful! Redirecting...');
-                    window.location.reload();
+                    window.location.href = svpData.homeUrl + '/stock/';
                 } else {
                     throw new Error(response.data.message || 'Registration failed');
                 }

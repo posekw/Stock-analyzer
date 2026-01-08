@@ -699,7 +699,7 @@ class StockValuationPro
                 '<h2>' . __('Welcome, ', 'stock-valuation-pro') . esc_html($user->display_name) . '</h2>' .
                 '<p>' . __('You are already logged in.', 'stock-valuation-pro') . '</p>' .
                 '<div class="svp-form-actions">' .
-                '<a href="' . home_url() . '" class="svp-btn svp-btn-primary">' . __('Go to Dashboard', 'stock-valuation-pro') . '</a>' .
+                '<a href="' . home_url('/stock/') . '" class="svp-btn svp-btn-primary">' . __('Go to Dashboard', 'stock-valuation-pro') . '</a>' .
                 '<a href="' . wp_logout_url(home_url()) . '" class="svp-btn svp-btn-secondary" style="margin-top: 10px;">' . __('Logout', 'stock-valuation-pro') . '</a>' .
                 '</div>' .
                 '</div></div>';
