@@ -2032,13 +2032,17 @@
         async loadSettings() {
             try {
                 const response = await $.ajax({
-                    url: svpData.restUrl + 'user/settings',
-                    type: 'GET'
+                    url: svpData.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'svp_get_api_key',
+                        nonce: svpData.nonce
+                    }
                 });
 
-                if (response.has_gemini_key) {
-                    setUserGeminiKey(response.gemini_api_key);
-                    $('#svp-gemini-api-key').attr('placeholder', response.gemini_api_key_masked + ' (saved)');
+                if (response.success && response.data.has_key) {
+                    setUserGeminiKey(response.data.api_key);
+                    $('#svp-gemini-api-key').attr('placeholder', response.data.masked_key + ' (saved)');
                 }
             } catch (err) {
                 console.error('SVP: Failed to load settings', err);
@@ -2064,14 +2068,18 @@
 
             try {
                 const response = await $.ajax({
-                    url: svpData.restUrl + 'user/settings',
+                    url: svpData.ajaxUrl,
                     type: 'POST',
-                    data: { gemini_api_key: geminiKey }
+                    data: {
+                        action: 'svp_save_api_key',
+                        nonce: svpData.nonce,
+                        api_key: geminiKey
+                    }
                 });
 
                 if (response.success) {
                     status.addClass('success').text('Settings saved successfully!').show();
-                    $('#svp-gemini-api-key').val('').attr('placeholder', '********' + geminiKey.slice(-4) + ' (saved)');
+                    $('#svp-gemini-api-key').val('').attr('placeholder', response.data.masked_key + ' (saved)');
 
                     setUserGeminiKey(geminiKey);
 
@@ -2080,6 +2088,8 @@
                     }
 
                     setTimeout(() => this.closeSettings(), 1500);
+                } else {
+                    status.addClass('error').text(response.data.message || 'Failed to save settings').show();
                 }
             } catch (err) {
                 console.error('SVP: Failed to save settings', err);

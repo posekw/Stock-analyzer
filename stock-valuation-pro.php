@@ -29,6 +29,7 @@ define('SVP_PLUGIN_BASENAME', plugin_basename(__FILE__));
 require_once SVP_PLUGIN_DIR . 'includes/class-svp-install.php';
 require_once SVP_PLUGIN_DIR . 'includes/class-svp-session.php';
 require_once SVP_PLUGIN_DIR . 'includes/class-svp-auth.php';
+require_once SVP_PLUGIN_DIR . 'includes/class-svp-user-settings.php';
 
 /**
  * Main Plugin Class
