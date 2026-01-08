@@ -1473,6 +1473,10 @@ NEWS:
      */
     public function ajax_add_to_watchlist()
     {
+        // Debug: Log what we're receiving
+        error_log('SVP Watchlist Add - POST data: ' . print_r($_POST, true));
+        error_log('SVP Watchlist Add - Nonce from POST: ' . ($_POST['_ajax_nonce'] ?? 'NOT SET'));
+
         check_ajax_referer('svp_nonce', '_ajax_nonce');
 
         $user_id = get_current_user_id();
