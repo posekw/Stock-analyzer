@@ -2060,6 +2060,11 @@
 
             const geminiKey = $('#svp-gemini-api-key').val();
 
+            console.log('SVP: Saving settings...');
+            console.log('SVP: Ajax URL:', svpData.ajaxUrl);
+            console.log('SVP: Nonce:', svpData.nonce);
+            console.log('SVP: API Key length:', geminiKey ? geminiKey.length : 0);
+
             if (!geminiKey) {
                 status.addClass('error').text('Please enter a Gemini API key').show();
                 this.setLoading(btn, false);
@@ -2077,6 +2082,8 @@
                     }
                 });
 
+                console.log('SVP: Server response:', response);
+
                 if (response.success) {
                     status.addClass('success').text('Settings saved successfully!').show();
                     $('#svp-gemini-api-key').val('').attr('placeholder', response.data.masked_key + ' (saved)');
@@ -2089,10 +2096,12 @@
 
                     setTimeout(() => this.closeSettings(), 1500);
                 } else {
-                    status.addClass('error').text(response.data.message || 'Failed to save settings').show();
+                    console.error('SVP: Save failed:', response.data);
+                    status.addClass('error').text(response.data ? response.data.message : 'Failed to save settings').show();
                 }
             } catch (err) {
-                console.error('SVP: Failed to save settings', err);
+                console.error('SVP: AJAX error:', err);
+                console.error('SVP: Error details:', err.responseText);
                 status.addClass('error').text('Failed to save settings. Please try again.').show();
             } finally {
                 this.setLoading(btn, false);
