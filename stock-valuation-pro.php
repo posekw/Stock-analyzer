@@ -170,48 +170,28 @@ class StockValuationPro
      */
     public function rest_user_settings($request)
     {
-        $user_id = $this->get_authenticated_user_id();
+        // Get current WordPress user
+        $wp_user_id = get_current_user_id();
 
-        if ($user_id) {
-            $user_id = (int) $user_id;
-        } else {
-            // Fallback for WP Admin if not logged in via specific SVP login
-            if (current_user_can('manage_options')) {
-                $current_wp_user = wp_get_current_user();
-                // Try to find SVP user by email
-                global $wpdb;
-                $table_users = $wpdb->prefix . 'svp_users';
-                $existing = $wpdb->get_row($wpdb->prepare(
-                    "SELECT id FROM $table_users WHERE email = %s",
-                    $current_wp_user->user_email
-                ));
-                if ($existing) {
-                    $user_id = $existing->id;
-                }
-            } else {
-                return new WP_Error('no_user', 'User not found', array('status' => 401));
-            }
-        }
-
-        // If we still don't have a user ID (e.g. WP Admin with no SVP account), we might need to handle it.
-        // For now, let's assume if they passed check_api_permission they should be able to save if we can find an ID.
-        if (!$user_id) {
-            return new WP_Error('no_svp_user', 'Please register an account in the plugin first.', array('status' => 401));
+        if (!$wp_user_id) {
+            return new WP_Error('not_logged_in', 'You must be logged in to manage settings', array('status' => 401));
         }
 
         if ($request->get_method() === 'POST') {
+            // Save API key to WordPress user meta
             $params = $request->get_params();
             $api_key = isset($params['gemini_api_key']) ? sanitize_text_field($params['gemini_api_key']) : '';
 
-            // Update using custom SVP Auth method
-            $this->auth->update_api_key($user_id, $api_key);
+            update_user_meta($wp_user_id, 'svp_gemini_api_key', $api_key);
 
-            return rest_ensure_response(array('success' => true));
+            return rest_ensure_response(array(
+                'success' => true,
+                'message' => 'API key saved successfully'
+            ));
         }
 
-        // GET request
-        // Get using custom SVP Auth method
-        $api_key = $this->auth->get_api_key($user_id);
+        // GET request - Return user's API key
+        $api_key = get_user_meta($wp_user_id, 'svp_gemini_api_key', true);
         $has_key = !empty($api_key);
         $masked_key = $has_key ? '********' . substr($api_key, -4) : '';
 
@@ -1136,12 +1116,21 @@ class StockValuationPro
             wp_send_json_error('No analysis data provided');
         }
 
-        $apiKey = isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '';
+        // Get API key from current logged-in user's meta
+        $wp_user_id = get_current_user_id();
+        $apiKey = '';
 
-        // Check if user provided their own API key
-        $userApiKey = isset($_POST['user_api_key']) ? sanitize_text_field($_POST['user_api_key']) : '';
-        if (!empty($userApiKey)) {
-            $apiKey = $userApiKey;
+        if ($wp_user_id) {
+            $apiKey = get_user_meta($wp_user_id, 'svp_gemini_api_key', true);
+        }
+
+        // Fallback to site-wide API key if user doesn't have one
+        if (empty($apiKey)) {
+            $apiKey = isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '';
+        }
+
+        if (empty($apiKey)) {
+            wp_send_json_error('Please configure your Gemini API key in settings');
         }
 
         if (empty($apiKey)) {
