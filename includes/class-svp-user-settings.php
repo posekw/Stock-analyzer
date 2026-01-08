@@ -23,24 +23,41 @@ class SVP_User_Settings
      */
     public function save_api_key()
     {
-        // Verify nonce
-        check_ajax_referer('svp_nonce', 'nonce');
+        // Log the request for debugging
+        error_log('SVP: save_api_key called');
+        error_log('SVP: User logged in (WP): ' . (is_user_logged_in() ? 'yes' : 'no'));
+        error_log('SVP: Current user ID: ' . get_current_user_id());
+        error_log('SVP: Nonce from request: ' . (isset($_POST['nonce']) ? $_POST['nonce'] : 'MISSING'));
+
+        // Verify nonce (false means don't die on failure)
+        $nonce_check = check_ajax_referer('svp_nonce', 'nonce', false);
+        if (!$nonce_check) {
+            error_log('SVP: Nonce verification failed');
+            wp_send_json_error(array('message' => 'Security check failed. Please refresh the page and try again.'));
+            return;
+        }
 
         // Check if user is logged in
         if (!is_user_logged_in()) {
-            wp_send_json_error(array('message' => 'You must be logged in'), 401);
+            error_log('SVP: User not logged in');
+            wp_send_json_error(array('message' => 'You must be logged in to WordPress'), 401);
+            return;
         }
 
         // Get the API key from POST data
         $api_key = isset($_POST['api_key']) ? sanitize_text_field($_POST['api_key']) : '';
 
         if (empty($api_key)) {
+            error_log('SVP: API key is empty');
             wp_send_json_error(array('message' => 'API key cannot be empty'));
+            return;
         }
 
         // Save to WordPress user meta
         $user_id = get_current_user_id();
-        update_user_meta($user_id, 'svp_gemini_api_key', $api_key);
+        $result = update_user_meta($user_id, 'svp_gemini_api_key', $api_key);
+
+        error_log('SVP: API key saved for user ' . $user_id . ', result: ' . ($result ? 'success' : 'failed'));
 
         wp_send_json_success(array(
             'message' => 'API key saved successfully',
@@ -53,15 +70,30 @@ class SVP_User_Settings
      */
     public function get_api_key()
     {
-        // Verify nonce
-        check_ajax_referer('svp_nonce', 'nonce');
+        // Log the request for debugging
+        error_log('SVP: get_api_key called');
+        error_log('SVP: User logged in (WP): ' . (is_user_logged_in() ? 'yes' : 'no'));
+        error_log('SVP: Current user ID: ' . get_current_user_id());
+
+        // Verify nonce (false means don't die on failure)
+        $nonce_check = check_ajax_referer('svp_nonce', 'nonce', false);
+        if (!$nonce_check) {
+            error_log('SVP: Nonce verification failed');
+            wp_send_json_error(array(
+                'has_key' => false,
+                'message' => 'Security check failed. Please refresh the page.'
+            ));
+            return;
+        }
 
         // Check if user is logged in
         if (!is_user_logged_in()) {
+            error_log('SVP: User not logged in to WordPress');
             wp_send_json_error(array(
                 'has_key' => false,
-                'message' => 'Not logged in'
+                'message' => 'Not logged in to WordPress'
             ));
+            return;
         }
 
         // Get API key from user meta
@@ -70,6 +102,8 @@ class SVP_User_Settings
 
         $has_key = !empty($api_key);
         $masked_key = $has_key ? '********' . substr($api_key, -4) : '';
+
+        error_log('SVP: API key retrieved for user ' . $user_id . ', has_key: ' . ($has_key ? 'yes' : 'no'));
 
         wp_send_json_success(array(
             'has_key' => $has_key,
