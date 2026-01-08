@@ -105,6 +105,10 @@ class StockValuationPro
 
         add_action('wp_ajax_svp_register_user', array($this, 'ajax_register_user'));
         add_action('wp_ajax_nopriv_svp_register_user', array($this, 'ajax_register_user'));
+
+        // Security: Hide Admin Bar & Restrict Access
+        add_action('after_setup_theme', array($this, 'remove_admin_bar'));
+        add_action('admin_init', array($this, 'restrict_admin_access'));
     }
 
     /**
@@ -1517,6 +1521,10 @@ NEWS:
             wp_send_json_error(array('message' => $user_id->get_error_message()));
         }
 
+        // Explicitly set role to subscriber
+        $user = new WP_User($user_id);
+        $user->set_role('subscriber');
+
         // Auto Login
         $creds = array(
             'user_login' => $username,
@@ -1529,6 +1537,31 @@ NEWS:
             'message' => 'Registration successful',
             'redirect_url' => home_url('/stock/')
         ));
+    }
+
+    /**
+     * Hide Admin Bar for non-admin users
+     */
+    public function remove_admin_bar()
+    {
+        if (!current_user_can('manage_options')) {
+            show_admin_bar(false);
+        }
+    }
+
+    /**
+     * Restrict access to WP Admin for non-admin users
+     */
+    public function restrict_admin_access()
+    {
+        if (defined('DOING_AJAX') && DOING_AJAX) {
+            return;
+        }
+
+        if (!current_user_can('manage_options')) {
+            wp_redirect(home_url('/stock/'));
+            exit;
+        }
     }
 
     /**
