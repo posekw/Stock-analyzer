@@ -993,13 +993,24 @@
 
         // Add current ticker to watchlist
         $('#svp-watchlist-add-btn').on('click', function () {
-            const ticker = state.ticker || $('#svp-ticker-input').val().toUpperCase().trim();
+            let ticker = state.ticker || $('#svp-ticker-input').val().toUpperCase().trim();
             console.log('SVP Watchlist: Add button clicked, ticker=', ticker);
+
+            // If no ticker, prompt the user to enter one
+            if (!ticker) {
+                ticker = prompt('Enter stock ticker symbol to add to watchlist:');
+                if (!ticker) {
+                    console.log('SVP Watchlist: User cancelled ticker entry');
+                    return;
+                }
+                ticker = ticker.toUpperCase().trim();
+            }
+
             if (ticker) {
                 addToWatchlist(ticker);
             } else {
-                console.log('SVP Watchlist: No ticker to add');
-                alert('Please enter a stock ticker first');
+                console.log('SVP Watchlist: No valid ticker to add');
+                alert('Please enter a valid stock ticker');
             }
         });
 
