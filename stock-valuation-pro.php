@@ -25,6 +25,11 @@ define('SVP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('SVP_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SVP_PLUGIN_BASENAME', plugin_basename(__FILE__));
 
+// Include custom authentication classes
+require_once SVP_PLUGIN_DIR . 'includes/class-svp-install.php';
+require_once SVP_PLUGIN_DIR . 'includes/class-svp-session.php';
+require_once SVP_PLUGIN_DIR . 'includes/class-svp-auth.php';
+
 /**
  * Main Plugin Class
  */
@@ -33,6 +38,7 @@ class StockValuationPro
 
     private static $instance = null;
     private $options;
+    private $auth;
 
     /**
      * Get singleton instance
@@ -51,6 +57,7 @@ class StockValuationPro
     private function __construct()
     {
         $this->options = get_option('svp_options', $this->get_default_options());
+        $this->auth = new SVP_Auth();
 
         // Initialize hooks
         add_action('init', array($this, 'init'));
@@ -106,9 +113,12 @@ class StockValuationPro
         add_action('wp_ajax_svp_register_user', array($this, 'ajax_register_user'));
         add_action('wp_ajax_nopriv_svp_register_user', array($this, 'ajax_register_user'));
 
-        // Security: Hide Admin Bar & Restrict Access
-        add_action('init', array($this, 'remove_admin_bar'));
-        add_action('admin_init', array($this, 'restrict_admin_access'));
+        add_action('wp_ajax_svp_logout_user', array($this, 'ajax_logout_user'));
+        add_action('wp_ajax_nopriv_svp_logout_user', array($this, 'ajax_logout_user'));
+
+        // Remove WordPress admin access hooks (no longer needed)
+        // add_action('init', array($this, 'remove_admin_bar'));
+        // add_action('admin_init', array($this, 'restrict_admin_access'));
     }
 
     /**
@@ -1465,7 +1475,7 @@ NEWS:
     }
 
     /**
-     * AJAX: Login User (Cookie-based)
+     * AJAX: Login User (Custom Auth)
      */
     public function ajax_login_user()
     {
@@ -1474,26 +1484,17 @@ NEWS:
         $username = sanitize_text_field($_POST['username']);
         $password = trim($_POST['password']);
 
-        $creds = array(
-            'user_login' => $username,
-            'user_password' => $password,
-            'remember' => true
-        );
+        $result = $this->auth->login($username, $password);
 
-        $user = wp_signon($creds, is_ssl());
-
-        if (is_wp_error($user)) {
-            wp_send_json_error(array('message' => $user->get_error_message()));
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error($result);
         }
-
-        wp_send_json_success(array(
-            'message' => 'Login successful',
-            'redirect_url' => home_url('/stock/')
-        ));
     }
 
     /**
-     * AJAX: Register User (Cookie-based)
+     * AJAX: Register User (Custom Auth)
      */
     public function ajax_register_user()
     {
@@ -1503,40 +1504,29 @@ NEWS:
         $email = sanitize_email($_POST['email']);
         $password = trim($_POST['password']);
 
-        if (empty($username) || empty($email) || empty($password)) {
-            wp_send_json_error(array('message' => 'Please fill in all fields.'));
+        $result = $this->auth->register($username, $email, $password);
+
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error($result);
         }
+    }
 
-        if (username_exists($username)) {
-            wp_send_json_error(array('message' => 'Username already exists.'));
+    /**
+     * AJAX: Logout User (Custom Auth)
+     */
+    public function ajax_logout_user()
+    {
+        check_ajax_referer('svp_nonce', 'nonce');
+
+        $result = $this->auth->logout();
+
+        if ($result['success']) {
+            wp_send_json_success($result);
+        } else {
+            wp_send_json_error($result);
         }
-
-        if (email_exists($email)) {
-            wp_send_json_error(array('message' => 'Email already exists.'));
-        }
-
-        $user_id = wp_create_user($username, $password, $email);
-
-        if (is_wp_error($user_id)) {
-            wp_send_json_error(array('message' => $user_id->get_error_message()));
-        }
-
-        // Explicitly set role to subscriber
-        $user = new WP_User($user_id);
-        $user->set_role('subscriber');
-
-        // Auto Login
-        $creds = array(
-            'user_login' => $username,
-            'user_password' => $password,
-            'remember' => true
-        );
-        wp_signon($creds, is_ssl());
-
-        wp_send_json_success(array(
-            'message' => 'Registration successful',
-            'redirect_url' => home_url('/stock/')
-        ));
     }
 
     /**
@@ -1964,6 +1954,9 @@ StockValuationPro::get_instance();
 
 // Activation hook
 register_activation_hook(__FILE__, function () {
+    // Create custom tables
+    SVP_Install::install();
+
     // Set default options
     if (!get_option('svp_options')) {
         add_option('svp_options', array(
