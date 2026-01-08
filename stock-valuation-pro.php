@@ -1455,31 +1455,39 @@ NEWS:
     {
         // First check WordPress session
         $user_id = get_current_user_id();
+        error_log('SVP Auth: WP user_id = ' . $user_id);
         if ($user_id) {
+            error_log('SVP Auth: Returning WP user_id = ' . $user_id);
             return $user_id;
         }
 
         // Check JWT token in Authorization header
         $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? $_SERVER['HTTP_AUTHORIZATION'] : '';
+        error_log('SVP Auth: HTTP_AUTHORIZATION = ' . ($auth_header ? 'present' : 'not set'));
         if (empty($auth_header) && function_exists('apache_request_headers')) {
             $headers = apache_request_headers();
             $auth_header = isset($headers['Authorization']) ? $headers['Authorization'] : '';
+            error_log('SVP Auth: Apache Authorization = ' . ($auth_header ? 'present' : 'not set'));
         }
 
         if ($auth_header) {
             list($token) = sscanf($auth_header, 'Bearer %s');
+            error_log('SVP Auth: Token extracted = ' . ($token ? 'yes' : 'no'));
             if ($token) {
                 require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
                 $jwt = new SVP_JWT_Handler();
                 $decoded = $jwt->decode($token);
+                error_log('SVP Auth: JWT decoded = ' . ($decoded ? 'yes' : 'no'));
                 if ($decoded && isset($decoded->data->user_id)) {
                     // Set current user for this request
                     wp_set_current_user($decoded->data->user_id);
+                    error_log('SVP Auth: Returning JWT user_id = ' . $decoded->data->user_id);
                     return $decoded->data->user_id;
                 }
             }
         }
 
+        error_log('SVP Auth: No authentication found, returning 0');
         return 0;
     }
 
