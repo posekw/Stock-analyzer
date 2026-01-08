@@ -1524,8 +1524,21 @@ NEWS:
         // check_ajax_referer('svp_nonce', '_ajax_nonce');
 
         $user_id = $this->get_authenticated_user_id();
+
+        // DEBUG: Return authentication info
+        $wp_user_id = get_current_user_id();
+        $debug_info = array(
+            'wp_user_id' => $wp_user_id,
+            'auth_user_id' => $user_id,
+            'is_user_logged_in' => is_user_logged_in(),
+            'has_jwt_header' => isset($_SERVER['HTTP_AUTHORIZATION']) ? 'yes' : 'no'
+        );
+
         if (!$user_id) {
-            wp_send_json_error('Not logged in');
+            wp_send_json_error(array(
+                'message' => 'Not logged in',
+                'debug' => $debug_info
+            ));
         }
 
         $ticker = strtoupper(sanitize_text_field($_POST['ticker'] ?? ''));
@@ -1544,7 +1557,7 @@ NEWS:
             update_user_meta($user_id, 'svp_watchlist', $watchlist);
         }
 
-        wp_send_json_success(array('watchlist' => $watchlist));
+        wp_send_json_success(array('watchlist' => $watchlist, 'debug' => $debug_info));
     }
 
     /**
