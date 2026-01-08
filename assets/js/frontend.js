@@ -1108,7 +1108,7 @@
 
     function loadWatchlist() {
         // Check if user is logged in using PHP-provided flag OR has JWT token
-        const isLoggedIn = (svpData && svpData.isLoggedIn === true) || localStorage.getItem('svp_token');
+        const isLoggedIn = (svpData && !!svpData.isLoggedIn) || !!localStorage.getItem('svp_token');
 
         console.log('SVP Watchlist: Checking auth...', {
             'svpData exists': !!svpData,
@@ -1163,7 +1163,6 @@
     function addToWatchlist(ticker) {
         if (!ticker) return;
 
-        const token = localStorage.getItem('svp_token');
         const ajaxConfig = {
             url: svpData.ajaxUrl,
             type: 'POST',
@@ -1182,6 +1181,9 @@
                     $('#svp-watchlist-sidebar').addClass('open');
                 } else {
                     console.log('SVP Watchlist: Add failed or no watchlist in response');
+                    if (response.data && response.data.message) {
+                        alert(response.data.message);
+                    }
                 }
             },
             error: function (xhr, status, error) {
@@ -1190,16 +1192,10 @@
             }
         };
 
-        // Add Authorization header if JWT token exists
-        if (token) {
-            ajaxConfig.headers = { 'Authorization': 'Bearer ' + token };
-        }
-
         $.ajax(ajaxConfig);
     }
 
     function removeFromWatchlist(ticker) {
-        const token = localStorage.getItem('svp_token');
         const ajaxConfig = {
             url: svpData.ajaxUrl,
             type: 'POST',
@@ -1218,11 +1214,6 @@
                 console.log('Failed to remove from watchlist');
             }
         };
-
-        // Add Authorization header if JWT token exists
-        if (token) {
-            ajaxConfig.headers = { 'Authorization': 'Bearer ' + token };
-        }
 
         $.ajax(ajaxConfig);
     }
@@ -2035,8 +2026,6 @@
     // --- Authentication System ---
     class SVPAuth {
         constructor() {
-            this.token = localStorage.getItem('svp_token');
-            this.user = JSON.parse(localStorage.getItem('svp_user') || 'null');
             this.init();
         }
 
@@ -2044,6 +2033,14 @@
             this.bindEvents();
             this.checkAuth();
             this.setupAjax();
+        }
+
+        setupAjax() {
+            $.ajaxSetup({
+                beforeSend: function (xhr) {
+                    xhr.setRequestHeader('X-WP-Nonce', svpData.nonce);
+                }
+            });
         }
 
         bindEvents() {
@@ -2061,8 +2058,8 @@
             // Register Form Submission
             $('#svp-register-form').on('submit', (e) => this.handleRegister(e));
 
-            // Logout (if we had a logout button)
-            $(document).on('click', '#svp-logout-btn', (e) => {
+            // Logout
+            $(document).on('click', '#svp-btn-logout, #svp-logout-btn', (e) => {
                 e.preventDefault();
                 this.logout();
             });
@@ -2087,16 +2084,11 @@
             try {
                 const response = await $.ajax({
                     url: svpData.restUrl + 'user/settings',
-                    type: 'GET',
-                    headers: {
-                        'Authorization': 'Bearer ' + this.token
-                    }
+                    type: 'GET'
                 });
 
                 if (response.has_gemini_key) {
-                    // Store the actual key for use with API requests
                     setUserGeminiKey(response.gemini_api_key);
-                    // Show masked version in placeholder
                     $('#svp-gemini-api-key').attr('placeholder', response.gemini_api_key_masked + ' (saved)');
                 }
             } catch (err) {
@@ -2125,20 +2117,15 @@
                 const response = await $.ajax({
                     url: svpData.restUrl + 'user/settings',
                     type: 'POST',
-                    data: { gemini_api_key: geminiKey },
-                    headers: {
-                        'Authorization': 'Bearer ' + this.token
-                    }
+                    data: { gemini_api_key: geminiKey }
                 });
 
                 if (response.success) {
                     status.addClass('success').text('Settings saved successfully!').show();
                     $('#svp-gemini-api-key').val('').attr('placeholder', '********' + geminiKey.slice(-4) + ' (saved)');
 
-                    // Store key locally for use in AI analyzer requests
                     setUserGeminiKey(geminiKey);
 
-                    // Update svpData so AI analyzer uses the new key
                     if (typeof svpData !== 'undefined') {
                         svpData.hasUserGeminiKey = true;
                     }
@@ -2153,18 +2140,6 @@
             }
         }
 
-        setupAjax() {
-            // Add JWT token to all AJAX requests
-            const self = this;
-            $.ajaxSetup({
-                beforeSend: function (xhr) {
-                    if (self.token) {
-                        xhr.setRequestHeader('Authorization', 'Bearer ' + self.token);
-                    }
-                }
-            });
-        }
-
         async handleLogin(e) {
             e.preventDefault();
             const form = $(e.currentTarget);
@@ -2175,30 +2150,29 @@
             msg.removeClass('error success').text('');
 
             const data = {
+                action: 'svp_login_user',
+                nonce: svpData.nonce,
                 username: form.find('input[name="username"]').val(),
                 password: form.find('input[name="password"]').val()
             };
 
             try {
-                console.log('SVP: Login attempt for:', data.username);
-                const response = await $.ajax({
-                    url: svpData.restUrl + 'auth/login',
-                    type: 'POST',
-                    data: data,
-                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8'
-                });
+                const response = await $.post(svpData.ajaxUrl, data);
 
-                // REST API returns direct JSON, typically
-                if (response.token) {
-                    this.loginSuccess(response);
+                if (response.success) {
                     msg.addClass('success').text('Login successful! Redirecting...');
-                    setTimeout(() => window.location.href = svpData.homeUrl + '/stock/', 1000);
+                    window.location.reload();
                 } else {
-                    throw new Error('Invalid response');
+                    throw new Error(response.data.message || 'Login failed');
                 }
 
             } catch (err) {
-                const errorMsg = err.responseJSON?.message || err.responseJSON?.code || 'Login failed. Please check your credentials.';
+                let errorMsg = 'Login failed.';
+                if (err.message) {
+                    errorMsg = err.message;
+                } else if (err.responseJSON && err.responseJSON.data && err.responseJSON.data.message) {
+                    errorMsg = err.responseJSON.data.message;
+                }
                 msg.addClass('error').text(errorMsg);
                 this.setLoading(btn, false);
             }
@@ -2206,7 +2180,6 @@
 
         async handleRegister(e) {
             e.preventDefault();
-            console.log('SVP: Registration form submitted');
             const form = $(e.currentTarget);
             const btn = form.find('button[type="submit"]');
             const msg = form.find('.svp-auth-message');
@@ -2215,94 +2188,37 @@
             msg.removeClass('error success').text('');
 
             const data = {
+                action: 'svp_register_user',
+                nonce: svpData.nonce,
                 username: form.find('input[name="username"]').val(),
                 email: form.find('input[name="email"]').val(),
                 password: form.find('input[name="password"]').val()
             };
 
-            console.log('SVP: Registration data:', { username: data.username, email: data.email });
-
             try {
-                const response = await $.ajax({
-                    url: svpData.restUrl + 'auth/register',
-                    type: 'POST',
-                    data: data
-                });
+                const response = await $.post(svpData.ajaxUrl, data);
 
-                console.log('SVP: Registration response:', response);
-
-                if (response.token) {
-                    this.loginSuccess(response);
+                if (response.success) {
                     msg.addClass('success').text('Registration successful! Redirecting...');
-                    setTimeout(() => window.location.href = svpData.homeUrl + '/stock/', 1000);
+                    window.location.reload();
+                } else {
+                    throw new Error(response.data.message || 'Registration failed');
                 }
 
             } catch (err) {
-                console.error('SVP: Registration error:', err);
-                const errorMsg = err.responseJSON?.message || 'Registration failed.';
+                let errorMsg = 'Registration failed.';
+                if (err.message) {
+                    errorMsg = err.message;
+                } else if (err.responseJSON && err.responseJSON.data && err.responseJSON.data.message) {
+                    errorMsg = err.responseJSON.data.message;
+                }
                 msg.addClass('error').text(errorMsg);
                 this.setLoading(btn, false);
             }
         }
 
-        loginSuccess(data) {
-            this.token = data.token;
-            this.user = {
-                email: data.user_email,
-                display_name: data.display_name
-            };
-            localStorage.setItem('svp_token', this.token);
-            localStorage.setItem('svp_user', JSON.stringify(this.user));
-            this.setupAjax();
-        }
-
         checkAuth() {
-            // Check if token exists
-            if (this.token) {
-                // Validate token with server to be sure
-                this.validateToken();
-
-                // If on auth page (and it's the actual login form), redirect to home
-                if ($('#svp-login-card').length > 0) {
-                    console.log('SVP: User already logged in, but allowing view of login card for debugging.');
-                    // window.location.href = svpData.homeUrl || '/'; 
-                }
-            } else {
-                // If checking auth on a dashboard page and no token, maybe prompt login?
-                // For now, we assume the shortcode is public but some features might be hidden
-                // or we just hide the user profile
-                this.renderUserProfile();
-            }
-        }
-
-        async validateToken() {
-            try {
-                const response = await $.ajax({
-                    url: svpData.restUrl + 'auth/me',
-                    type: 'GET',
-                    beforeSend: (xhr) => {
-                        xhr.setRequestHeader('Authorization', 'Bearer ' + this.token);
-                    }
-                });
-
-                if (response.id) {
-                    // Update user info just in case
-                    this.user = {
-                        email: response.email,
-                        display_name: response.display_name,
-                        username: response.username
-                    };
-                    localStorage.setItem('svp_user', JSON.stringify(this.user));
-                    this.renderUserProfile();
-
-                    // Load user settings (including API key) in the background
-                    this.loadSettings();
-                }
-
-            } catch (err) {
-                // Token invalid
-                this.logout(false); // Don't reload, just clear
-            }
+            this.renderUserProfile();
         }
 
         renderUserProfile() {
@@ -2311,34 +2227,18 @@
             const logoutBtn = $('#svp-btn-logout');
             const loginBtn = $('#svp-btn-login');
 
-            if (this.token && this.user) {
-                usernameEl.text(this.user.display_name || this.user.username || 'User');
-                profileEl.css('display', 'flex'); // Show profile
-                loginBtn.hide(); // Hide login button when logged in
-
-                // Bind logout
-                logoutBtn.off('click').on('click', (e) => {
-                    e.preventDefault();
-                    this.logout();
-                });
+            if (svpData.isLoggedIn) {
+                usernameEl.text(svpData.displayName || 'User');
+                profileEl.css('display', 'flex');
+                loginBtn.hide();
             } else {
                 profileEl.hide();
-                loginBtn.show(); // Show login button when not logged in
+                loginBtn.show();
             }
         }
 
-        logout(reload = true) {
-            localStorage.removeItem('svp_token');
-            localStorage.removeItem('svp_user');
-            localStorage.removeItem('svp_user_gemini_key'); // Clear user's API key on logout
-            this.token = null;
-            this.user = null;
-            userGeminiKey = ''; // Clear the in-memory key too
-            if (reload) {
-                window.location.reload();
-            } else {
-                this.renderUserProfile();
-            }
+        logout() {
+            window.location.href = svpData.logoutUrl;
         }
 
         setLoading(btn, isLoading) {

@@ -98,6 +98,13 @@ class StockValuationPro
 
         // Register REST API routes
         add_action('rest_api_init', array($this, 'register_rest_routes'));
+
+        // Auth
+        add_action('wp_ajax_svp_login_user', array($this, 'ajax_login_user'));
+        add_action('wp_ajax_nopriv_svp_login_user', array($this, 'ajax_login_user'));
+
+        add_action('wp_ajax_svp_register_user', array($this, 'ajax_register_user'));
+        add_action('wp_ajax_nopriv_svp_register_user', array($this, 'ajax_register_user'));
     }
 
     /**
@@ -200,6 +207,8 @@ class StockValuationPro
             'homeUrl' => home_url(),
             'isLoggedIn' => is_user_logged_in(),
             'userId' => get_current_user_id(),
+            'displayName' => is_user_logged_in() ? wp_get_current_user()->display_name : '',
+            'logoutUrl' => wp_logout_url(home_url()),
         ));
     }
 
@@ -1452,46 +1461,82 @@ NEWS:
     }
 
     /**
-     * Get current user ID (supports both WordPress auth and JWT)
+     * AJAX: Login User (Cookie-based)
+     */
+    public function ajax_login_user()
+    {
+        check_ajax_referer('svp_nonce', 'nonce');
+
+        $username = sanitize_text_field($_POST['username']);
+        $password = trim($_POST['password']);
+
+        $creds = array(
+            'user_login' => $username,
+            'user_password' => $password,
+            'remember' => true
+        );
+
+        $user = wp_signon($creds, is_ssl());
+
+        if (is_wp_error($user)) {
+            wp_send_json_error(array('message' => $user->get_error_message()));
+        }
+
+        wp_send_json_success(array(
+            'message' => 'Login successful',
+            'redirect_url' => home_url('/stock/')
+        ));
+    }
+
+    /**
+     * AJAX: Register User (Cookie-based)
+     */
+    public function ajax_register_user()
+    {
+        check_ajax_referer('svp_nonce', 'nonce');
+
+        $username = sanitize_text_field($_POST['username']);
+        $email = sanitize_email($_POST['email']);
+        $password = trim($_POST['password']);
+
+        if (empty($username) || empty($email) || empty($password)) {
+            wp_send_json_error(array('message' => 'Please fill in all fields.'));
+        }
+
+        if (username_exists($username)) {
+            wp_send_json_error(array('message' => 'Username already exists.'));
+        }
+
+        if (email_exists($email)) {
+            wp_send_json_error(array('message' => 'Email already exists.'));
+        }
+
+        $user_id = wp_create_user($username, $password, $email);
+
+        if (is_wp_error($user_id)) {
+            wp_send_json_error(array('message' => $user_id->get_error_message()));
+        }
+
+        // Auto Login
+        $creds = array(
+            'user_login' => $username,
+            'user_password' => $password,
+            'remember' => true
+        );
+        wp_signon($creds, is_ssl());
+
+        wp_send_json_success(array(
+            'message' => 'Registration successful',
+            'redirect_url' => home_url('/stock/')
+        ));
+    }
+
+    /**
+     * Get current user ID (Standard WordPress Session)
      */
     private function get_authenticated_user_id()
     {
-        // First check WordPress session
-        $user_id = get_current_user_id();
-        error_log('SVP Auth: WP user_id = ' . $user_id);
-        if ($user_id) {
-            error_log('SVP Auth: Returning WP user_id = ' . $user_id);
-            return $user_id;
-        }
-
-        // Check JWT token in Authorization header
-        $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? $_SERVER['HTTP_AUTHORIZATION'] : '';
-        error_log('SVP Auth: HTTP_AUTHORIZATION = ' . ($auth_header ? 'present' : 'not set'));
-        if (empty($auth_header) && function_exists('apache_request_headers')) {
-            $headers = apache_request_headers();
-            $auth_header = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-            error_log('SVP Auth: Apache Authorization = ' . ($auth_header ? 'present' : 'not set'));
-        }
-
-        if ($auth_header) {
-            list($token) = sscanf($auth_header, 'Bearer %s');
-            error_log('SVP Auth: Token extracted = ' . ($token ? 'yes' : 'no'));
-            if ($token) {
-                require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
-                $jwt = new SVP_JWT_Handler();
-                $decoded = $jwt->decode($token);
-                error_log('SVP Auth: JWT decoded = ' . ($decoded ? 'yes' : 'no'));
-                if ($decoded && isset($decoded->data->user_id)) {
-                    // Set current user for this request
-                    wp_set_current_user($decoded->data->user_id);
-                    error_log('SVP Auth: Returning JWT user_id = ' . $decoded->data->user_id);
-                    return $decoded->data->user_id;
-                }
-            }
-        }
-
-        error_log('SVP Auth: No authentication found, returning 0');
-        return 0;
+        return get_current_user_id();
     }
 
     /**
@@ -1499,8 +1544,7 @@ NEWS:
      */
     public function ajax_get_watchlist()
     {
-        // TEMPORARY: Comment out nonce check for debugging
-        // check_ajax_referer('svp_nonce', '_ajax_nonce');
+        check_ajax_referer('svp_nonce', '_ajax_nonce');
 
         $user_id = $this->get_authenticated_user_id();
         if (!$user_id) {
@@ -1524,8 +1568,7 @@ NEWS:
         error_log('SVP Watchlist Add - POST data: ' . print_r($_POST, true));
         error_log('SVP Watchlist Add - Nonce from POST: ' . ($_POST['_ajax_nonce'] ?? 'NOT SET'));
 
-        // TEMPORARY: Comment out nonce check for debugging
-        // check_ajax_referer('svp_nonce', '_ajax_nonce');
+        check_ajax_referer('svp_nonce', '_ajax_nonce');
 
         $user_id = $this->get_authenticated_user_id();
 
@@ -1569,8 +1612,7 @@ NEWS:
      */
     public function ajax_remove_from_watchlist()
     {
-        // TEMPORARY: Comment out nonce check for debugging
-        // check_ajax_referer('svp_nonce', '_ajax_nonce');
+        check_ajax_referer('svp_nonce', '_ajax_nonce');
 
         $user_id = $this->get_authenticated_user_id();
         if (!$user_id) {
