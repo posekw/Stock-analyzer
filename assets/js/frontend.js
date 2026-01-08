@@ -723,6 +723,15 @@
         return div.innerHTML;
     }
 
+    // User API Key Helpers
+    function getUserGeminiKey() {
+        return state.userGeminiKey || '';
+    }
+
+    function setUserGeminiKey(key) {
+        state.userGeminiKey = key;
+    }
+
     // Initialize
     $(document).ready(function () {
         console.log('SVP: Frontend script initialized');

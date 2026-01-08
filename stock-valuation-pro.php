@@ -1047,8 +1047,18 @@ class StockValuationPro
 
         $apiKey = isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '';
 
-        // Check if user provided their own API key
+        // Check if user provided their own API key (from frontend)
         $userApiKey = isset($_POST['user_api_key']) ? sanitize_text_field($_POST['user_api_key']) : '';
+
+        // If not provided in request, check if logged-in user has one saved
+        if (empty($userApiKey) && $this->auth->is_logged_in()) {
+            $userId = $this->auth->get_current_user_id();
+            $storedKey = $this->auth->get_api_key($userId);
+            if (!empty($storedKey)) {
+                $userApiKey = $storedKey;
+            }
+        }
+
         if (!empty($userApiKey)) {
             $apiKey = $userApiKey;
         }

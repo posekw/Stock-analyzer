@@ -47,6 +47,12 @@ class SVP_Install
 
         dbDelta($sql_users);
 
+        // Explicitly check for gemini_api_key column to handle dbDelta quirks
+        $row = $wpdb->get_results("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" . DB_NAME . "' AND TABLE_NAME = '$users_table' AND COLUMN_NAME = 'gemini_api_key'");
+        if (empty($row)) {
+            $wpdb->query("ALTER TABLE $users_table ADD COLUMN gemini_api_key text DEFAULT NULL");
+        }
+
         // Create sessions table
         $sql_sessions = "CREATE TABLE $sessions_table (
             id bigint(20) NOT NULL AUTO_INCREMENT,
