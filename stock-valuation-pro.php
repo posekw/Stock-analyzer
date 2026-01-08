@@ -729,278 +729,45 @@ class StockValuationPro
      */
     public function register_rest_routes()
     {
-        // Auth Routes
-        register_rest_route('svp/v1', '/auth/login', array(
-            'methods' => 'POST',
-            'callback' => array($this, 'rest_auth_login'),
-            'permission_callback' => '__return_true',
-        ));
-
-        register_rest_route('svp/v1', '/auth/register', array(
-            'methods' => 'POST',
-            'callback' => array($this, 'rest_auth_register'),
-            'permission_callback' => '__return_true',
-        ));
-
-        register_rest_route('svp/v1', '/auth/me', array(
-            'methods' => 'GET',
-            'callback' => array($this, 'rest_auth_me'),
-            'permission_callback' => array($this, 'check_api_permission'),
-        ));
-
-        // existing routes...
+        // Stock Data Route
         register_rest_route('svp/v1', '/stock/(?P<ticker>[a-zA-Z0-9\.\-]+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'rest_get_stock_data'),
             'permission_callback' => array($this, 'check_api_permission'),
         ));
 
+        // Valuation Route
         register_rest_route('svp/v1', '/valuation', array(
             'methods' => 'POST',
             'callback' => array($this, 'rest_calculate_valuation'),
             'permission_callback' => array($this, 'check_api_permission'),
         ));
 
+        // Technicals Route
         register_rest_route('svp/v1', '/technicals/(?P<ticker>[a-zA-Z0-9\.\-]+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'rest_get_technicals'),
             'permission_callback' => array($this, 'check_api_permission'),
         ));
 
+        // News Route
         register_rest_route('svp/v1', '/news/(?P<ticker>[a-zA-Z0-9\.\-]+)', array(
             'methods' => 'GET',
             'callback' => array($this, 'rest_get_news'),
             'permission_callback' => array($this, 'check_api_permission'),
         ));
-
-        // User Settings Routes
-        register_rest_route('svp/v1', '/user/settings', array(
-            'methods' => 'GET',
-            'callback' => array($this, 'rest_get_user_settings'),
-            'permission_callback' => array($this, 'check_api_permission'),
-        ));
-
-        register_rest_route('svp/v1', '/user/settings', array(
-            'methods' => 'POST',
-            'callback' => array($this, 'rest_save_user_settings'),
-            'permission_callback' => array($this, 'check_api_permission'),
-        ));
     }
 
     /**
-     * REST API: Login
-     * Uses JWT-only authentication - does NOT create WordPress sessions
-     * This keeps the stock plugin login separate from the main site login
-     */
-    public function rest_auth_login($request)
-    {
-        $username = sanitize_text_field($request['username']);
-        $password = sanitize_text_field($request['password']);
-
-        // Use wp_authenticate instead of wp_signon to validate credentials
-        // without creating a WordPress session/cookie
-        $user = wp_authenticate($username, $password);
-
-        if (is_wp_error($user)) {
-            return new WP_Error('invalid_credentials', 'Invalid username or password', array('status' => 401));
-        }
-
-        // Check if user is banned
-        if (get_user_meta($user->ID, 'svp_user_banned', true)) {
-            return new WP_Error('user_banned', 'Your account has been suspended. Please contact support.', array('status' => 403));
-        }
-
-        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
-        $jwt = new SVP_JWT_Handler();
-        $token = $jwt->generate_token($user->ID);
-
-        return rest_ensure_response(array(
-            'token' => $token,
-            'user_email' => $user->user_email,
-            'display_name' => $user->display_name
-        ));
-    }
-
-    /**
-     * REST API: Register
-     */
-    public function rest_auth_register($request)
-    {
-        $username = sanitize_text_field($request['username']);
-        $email = sanitize_email($request['email']);
-        $password = sanitize_text_field($request['password']);
-
-        if (username_exists($username)) {
-            return new WP_Error('username_exists', 'This username is already taken. Please choose a different username.', array('status' => 400));
-        }
-
-        if (email_exists($email)) {
-            return new WP_Error('email_exists', 'This email is already registered. Please use a different email or try logging in.', array('status' => 400));
-        }
-
-        $user_id = wp_create_user($username, $password, $email);
-
-        if (is_wp_error($user_id)) {
-            return new WP_Error('registration_failed', $user_id->get_error_message(), array('status' => 500));
-        }
-
-        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
-        $jwt = new SVP_JWT_Handler();
-        $token = $jwt->generate_token($user_id);
-        $user = get_user_by('id', $user_id);
-
-        return rest_ensure_response(array(
-            'token' => $token,
-            'user_email' => $user->user_email,
-            'display_name' => $user->display_name
-        ));
-    }
-
-    /**
-     * REST API: Get Current User
-     */
-    public function rest_auth_me($request)
-    {
-        // User ID is already validated and set in check_api_permission if we strictly used it,
-        // but here we manually re-validate to get the object or rely on permissions.
-        // Since we don't pass the ID from permission callback easily, let's re-parse.
-        // Actually, check_api_permission returns true/false.
-        // So we strictly extract token again.
-
-        $auth_header = $request->get_header('Authorization');
-        if (!$auth_header)
-            return new WP_Error('no_token', 'No token provided', array('status' => 401));
-
-        list($token) = sscanf($auth_header, 'Bearer %s');
-
-        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
-        $jwt = new SVP_JWT_Handler();
-        $user_id = $jwt->validate_token($token);
-
-        if (!$user_id) {
-            return new WP_Error('invalid_token', 'Invalid Token', array('status' => 401));
-        }
-
-        $user = get_user_by('id', $user_id);
-
-        return rest_ensure_response(array(
-            'id' => $user->ID,
-            'username' => $user->user_login,
-            'email' => $user->user_email,
-            'display_name' => $user->display_name
-        ));
-    }
-
-    /**
-     * REST API: Get User Settings
-     */
-    public function rest_get_user_settings($request)
-    {
-        // Get user ID from JWT token
-        $auth_header = $request->get_header('Authorization');
-        if (!$auth_header || strpos($auth_header, 'Bearer ') !== 0) {
-            return new WP_Error('no_token', 'No token provided', array('status' => 401));
-        }
-
-        $token = substr($auth_header, 7);
-        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
-        $jwt = new SVP_JWT_Handler();
-        $user_id = $jwt->validate_token($token);
-
-        if (!$user_id) {
-            return new WP_Error('invalid_token', 'Invalid Token', array('status' => 401));
-        }
-
-        // Get user settings from user meta
-        $gemini_api_key = get_user_meta($user_id, 'svp_gemini_api_key', true);
-
-        return rest_ensure_response(array(
-            'gemini_api_key' => $gemini_api_key ? $gemini_api_key : '',
-            'gemini_api_key_masked' => $gemini_api_key ? $this->mask_api_key($gemini_api_key) : '',
-            'has_gemini_key' => !empty($gemini_api_key)
-        ));
-    }
-
-    /**
-     * REST API: Save User Settings
-     */
-    public function rest_save_user_settings($request)
-    {
-        // Get user ID from JWT token
-        $auth_header = $request->get_header('Authorization');
-        if (!$auth_header || strpos($auth_header, 'Bearer ') !== 0) {
-            return new WP_Error('no_token', 'No token provided', array('status' => 401));
-        }
-
-        $token = substr($auth_header, 7);
-        require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
-        $jwt = new SVP_JWT_Handler();
-        $user_id = $jwt->validate_token($token);
-
-        if (!$user_id) {
-            return new WP_Error('invalid_token', 'Invalid Token', array('status' => 401));
-        }
-
-        // Save Gemini API key if provided
-        $gemini_api_key = sanitize_text_field($request['gemini_api_key']);
-        if (!empty($gemini_api_key)) {
-            update_user_meta($user_id, 'svp_gemini_api_key', $gemini_api_key);
-        }
-
-        return rest_ensure_response(array(
-            'success' => true,
-            'message' => 'Settings saved successfully'
-        ));
-    }
-
-    /**
-     * Mask API key for display (show only last 4 characters)
-     */
-    private function mask_api_key($key)
-    {
-        if (strlen($key) <= 4) {
-            return '****';
-        }
-        return str_repeat('*', strlen($key) - 4) . substr($key, -4);
-    }
-
-    /**
-     * Get user's Gemini API key (for internal use)
-     */
-    public function get_user_gemini_key($user_id)
-    {
-        $user_key = get_user_meta($user_id, 'svp_gemini_api_key', true);
-        if (!empty($user_key)) {
-            return $user_key;
-        }
-        // Fall back to global key if user doesn't have one
-        return isset($this->options['gemini_api_key']) ? $this->options['gemini_api_key'] : '';
-    }
-
-    /**
-     * Check API Permission (Enhanced for JWT)
+     * Check API Permission
+     * 
+     * Uses the custom SVP_Auth system to validate requests
      */
     public function check_api_permission($request)
     {
-        // 1. Check Standard WP Cookie Auth
-        if (is_user_logged_in()) {
+        // 1. Check if user is logged in via custom session
+        if ($this->auth->is_logged_in()) {
             return true;
-        }
-
-        // 2. Check JWT Header
-        $auth_header = $request->get_header('Authorization');
-        if ($auth_header) {
-            list($token) = sscanf($auth_header, 'Bearer %s');
-            if ($token) {
-                require_once SVP_PLUGIN_DIR . 'includes/class-jwt-handler.php';
-                $jwt = new SVP_JWT_Handler();
-                $user_id = $jwt->validate_token($token);
-                if ($user_id) {
-                    // Optional: Set current user context for this request
-                    wp_set_current_user($user_id);
-                    return true;
-                }
-            }
         }
 
         return false;
