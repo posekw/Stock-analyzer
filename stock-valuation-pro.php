@@ -161,10 +161,7 @@ class StockValuationPro
     /**
      * Enqueue frontend assets
      */
-    public function enqueue_frontend_assets()
-    {
-        // ... (existing code) ...
-    }
+
 
     // ... (skip lines) ...
 
@@ -831,37 +828,7 @@ class StockValuationPro
         return false;
     }
 
-    /**
-     * Handle User Settings REST API
-     */
-    public function rest_user_settings($request)
-    {
-        $user_id = $this->get_authenticated_user_id();
 
-        if (!$user_id) {
-            return new WP_Error('unauthorized', 'User not logged in', array('status' => 401));
-        }
-
-        if ($request->get_method() === 'POST') {
-            $params = $request->get_params();
-            $api_key = isset($params['gemini_api_key']) ? sanitize_text_field($params['gemini_api_key']) : '';
-
-            update_user_meta($user_id, 'svp_gemini_api_key', $api_key);
-
-            return rest_ensure_response(array('success' => true));
-        }
-
-        // GET request
-        $api_key = get_user_meta($user_id, 'svp_gemini_api_key', true);
-        $has_key = !empty($api_key);
-        $masked_key = $has_key ? '********' . substr($api_key, -4) : '';
-
-        return rest_ensure_response(array(
-            'has_gemini_key' => $has_key,
-            'gemini_api_key' => $api_key,
-            'gemini_api_key_masked' => $masked_key
-        ));
-    }
 
     public function rest_calculate_valuation($request)
     {
