@@ -1420,6 +1420,52 @@ NEWS:
         wp_send_json_success(array('watchlist' => $watchlist ? $watchlist : array()));
     }
 
+    /**
+     * Get real-time quote via Yahoo Finance
+     */
+    public function ajax_get_quote()
+    {
+        check_ajax_referer('svp_nonce', 'nonce');
+
+        $ticker = isset($_POST['ticker']) ? strtoupper(sanitize_text_field($_POST['ticker'])) : '';
+        if (empty($ticker)) {
+            wp_send_json_error('Invalid ticker');
+        }
+
+        $transient_key = 'svp_quote_' . $ticker;
+        $cached = get_transient($transient_key);
+        if ($cached !== false) {
+            wp_send_json_success(array('price' => floatval($cached), 'ticker' => $ticker));
+        }
+
+        // Yahoo Finance API URL (Public endpoint)
+        $url = "https://query1.finance.yahoo.com/v8/finance/chart/$ticker?interval=1d&range=5d";
+
+        $response = wp_remote_get($url, array(
+            'timeout' => 10,
+            'sslverify' => false,
+            'headers' => array(
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            )
+        ));
+
+        if (is_wp_error($response)) {
+            wp_send_json_error('API request failed');
+        }
+
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        if (isset($data['chart']['result'][0]['meta']['regularMarketPrice'])) {
+            $price = floatval($data['chart']['result'][0]['meta']['regularMarketPrice']);
+            set_transient($transient_key, $price, 300); // 5 min cache
+            wp_send_json_success(array('price' => $price, 'ticker' => $ticker));
+        } else {
+            wp_send_json_error('Price not found');
+        }
+    }
+
     private function discover_gemini_models($apiKey)
     {
         $url = "https://generativelanguage.googleapis.com/v1beta/models?key={$apiKey}";
