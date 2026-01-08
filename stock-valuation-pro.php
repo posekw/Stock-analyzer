@@ -1415,11 +1415,34 @@ NEWS:
     }
 
     /**
-     * Get current user ID (Standard WordPress Session)
+     * Get Authenticated User ID
+     * 
+     * Tries custom SVP session first, then falls back to WordPress user
      */
     private function get_authenticated_user_id()
     {
-        return $this->auth->get_current_user_id();
+        // 1. Try custom SVP session first (plugin's own auth)
+        $user_id = $this->auth->get_current_user_id();
+        if ($user_id) {
+            return (int) $user_id;
+        }
+
+        // 2. Fallback to WordPress user if logged in
+        if (is_user_logged_in()) {
+            $wp_user = wp_get_current_user();
+            // Try to find matching SVP user by email
+            global $wpdb;
+            $table_users = $wpdb->prefix . 'svp_users';
+            $svp_user = $wpdb->get_row($wpdb->prepare(
+                "SELECT id FROM $table_users WHERE email = %s",
+                $wp_user->user_email
+            ));
+            if ($svp_user) {
+                return (int) $svp_user->id;
+            }
+        }
+
+        return null;
     }
 
     /**
