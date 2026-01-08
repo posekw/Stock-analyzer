@@ -994,10 +994,12 @@
         // Add current ticker to watchlist
         $('#svp-watchlist-add-btn').on('click', function () {
             const ticker = state.ticker || $('#svp-ticker-input').val().toUpperCase().trim();
+            console.log('SVP Watchlist: Add button clicked, ticker=', ticker);
             if (ticker) {
                 addToWatchlist(ticker);
             } else {
-                console.log('No ticker to add');
+                console.log('SVP Watchlist: No ticker to add');
+                alert('Please enter a stock ticker first');
             }
         });
 
