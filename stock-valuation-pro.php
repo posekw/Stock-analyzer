@@ -90,8 +90,11 @@ class StockValuationPro
 
         // User watchlist
         add_action('wp_ajax_svp_get_watchlist', array($this, 'ajax_get_watchlist'));
+        add_action('wp_ajax_nopriv_svp_get_watchlist', array($this, 'ajax_get_watchlist'));
         add_action('wp_ajax_svp_add_to_watchlist', array($this, 'ajax_add_to_watchlist'));
+        add_action('wp_ajax_nopriv_svp_add_to_watchlist', array($this, 'ajax_add_to_watchlist'));
         add_action('wp_ajax_svp_remove_from_watchlist', array($this, 'ajax_remove_from_watchlist'));
+        add_action('wp_ajax_nopriv_svp_remove_from_watchlist', array($this, 'ajax_remove_from_watchlist'));
 
         // Register REST API routes
         add_action('rest_api_init', array($this, 'register_rest_routes'));
