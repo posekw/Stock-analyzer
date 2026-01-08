@@ -77,7 +77,7 @@ $active_section = 'dashboard';
             </div>
 
             <!-- Login Button (shown when not logged in) -->
-            <a href="<?php echo esc_url(home_url('/login/')); ?>" class="svp-btn-login" id="svp-btn-login">
+            <a href="http://192.168.50.230/Stocklogin" class="svp-btn-login" id="svp-btn-login">
                 <span>🔐</span> Login
             </a>
         </div>
@@ -106,7 +106,7 @@ $active_section = 'dashboard';
             <div class="svp-watchlist-login" id="svp-watchlist-login" style="display: none;">
                 <span>🔐</span>
                 <p>Login to save your watchlist</p>
-                <a href="<?php echo esc_url(home_url('/login/')); ?>" class="svp-btn svp-btn-primary svp-btn-sm">Login</a>
+                <a href="http://192.168.50.230/Stocklogin" class="svp-btn svp-btn-primary svp-btn-sm">Login</a>
             </div>
         </div>
     </aside>
